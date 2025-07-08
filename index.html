@@ -1,1149 +1,503 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI & Development Project Portfolio for Cameroon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Light Theme with Green/Pink Accents -->
+    <!-- Application Structure Plan: The application is designed as a single-page, interactive project showcase with a clean, modern aesthetic inspired by the provided template. The structure prioritizes user-driven exploration. The flow is: 1) High-level context via an introductory text and a GDP chart. 2) A primary interaction hub allowing users to filter projects by sector and toggle language (English/French). 3) A dynamic content area displaying project "cards" that expand to reveal details. 4) Dedicated sections for each developer's pedigree, styled to match the overall theme. This task-oriented design is optimal for business leaders, enabling them to quickly find relevant solutions and understand the value proposition in their preferred language without scrolling through irrelevant information, all within a visually engaging and modern interface. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Cameroon GDP composition. -> Goal: Inform/Context. -> Viz: Donut Chart. -> Interaction: Hover for tooltips. -> Justification: Provides a quick, visual overview of the economic landscape, adapted for a lighter theme. -> Library: Chart.js.
+        - Report Info: 22+ detailed project proposals across 5 sectors. -> Goal: Inform/Persuade. -> Presentation: Interactive, expandable accordion cards, styled with clean, card-like appearance. -> Interaction: 1. Sector filtering buttons. 2. Language toggle switch. 3. Click-to-expand cards. -> Justification: This multi-layered interaction model allows for a clean overview while offering deep-dive details on demand, integrated seamlessly into the new design. -> Library/Method: Vanilla JS, Tailwind CSS.
+        - Report Info: Core team competencies and individual developer pedigree. -> Goal: Establish Credibility. -> Presentation: Styled sections for each developer, mimicking the template's distinct responsibility/task areas. -> Interaction: None. -> Justification: Provides a clear, visually appealing overview of technical skills and individual expertise within the new design language. -> Library/Method: HTML/CSS.
+        - Report Info: New project idea generation. -> Goal: Engagement/Showcase AI capability. -> Presentation: Dynamically generated project card. -> Interaction: Button click to trigger Gemini API call. -> Justification: Demonstrates practical application of AI in a user-facing way. -> Library/Method: Vanilla JS, Gemini API. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-      body {
-        font-family: "Inter", sans-serif;
-      }
-      .accordion-content {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.5s ease-in-out;
-      }
-      .nav-button.active {
-        background-color: #a16207;
-        color: #ffffff;
-      }
-      .nav-button:not(.active):hover {
-        background-color: #fefce8;
-      }
-      .lang-en,
-      .lang-fr {
-        display: none;
-      }
-      .lang-toggle:checked ~ main .lang-fr {
-        display: block;
-      }
-      .lang-toggle:not(:checked) ~ main .lang-en {
-        display: block;
-      }
-      .chart-container {
-        position: relative;
-        margin-left: auto;
-        margin-right: auto;
-        height: 300px;
-        width: 100%;
-        max-width: 350px;
-      }
+        body { font-family: 'Inter', sans-serif; background-color: #F5F5F5; /* Very light grey background */ }
+        .glass-container {
+            background: #FFFFFF; /* Solid white background for cards */
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            color: #333333; /* Dark grey for primary text */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Add transition for hover */
+        }
+        .glass-container:hover {
+            transform: translateY(-5px); /* Lift effect on hover */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Slightly larger shadow on hover */
+        }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .nav-button {
+            background-color: #E0E0E0; /* Light grey for inactive buttons */
+            border: 1px solid #D0D0D0;
+            color: #333333; /* Dark text for buttons */
+            transition: all 0.3s ease-in-out;
+        }
+        .nav-button.active { background-color: #EE63B6; border-color: #EE63B6; color: #FFFFFF; } /* Pink accent for active button, white text */
+        .nav-button:not(.active):hover { background-color: #D0D0D0; }
+        .lang-en, .lang-fr { display: none; }
+        .lang-toggle:checked ~ main .lang-fr, .lang-toggle:checked ~ header .lang-fr, .lang-toggle:checked ~ footer .lang-fr { display: block; }
+        .lang-toggle:not(:checked) ~ main .lang-en, .lang-toggle:not(:checked) ~ header .lang-en, .lang-toggle:not(:checked) ~ footer .lang-en { display: block; }
+        .lang-toggle-dot { background-color: #6CBF4F !important; } /* Green accent for toggle dot */
+        .chart-container { position: relative; margin-left: auto; margin-right: auto; height: 300px; width: 100%; max-width: 350px; }
+        .project-card .accordion-title {
+            background: #F8F8F8; /* Very light grey for title bar */
+            color: #333333; /* Dark text for titles */
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .project-card .accordion-title:hover {
+            background: #EFEFEF; /* Slightly darker grey on hover */
+        }
+        .project-card.bg-green-50 .accordion-title {
+            background: #D8FFD8 !important; /* Light green for generated card title */
+            border-color: #6CBF4F !important; /* Green border */
+        }
+        .project-card.bg-green-50 {
+            background: #F0FFF0 !important; /* Very light green for generated card body */
+            border-color: #6CBF4F !important; /* Green border */
+        }
+        .project-card .accordion-content {
+            background: #FFFFFF; /* White background for content */
+            color: #555555; /* Slightly lighter dark grey for content text */
+        }
+        .project-card .accordion-content h5 {
+            color: #EE63B6; /* Pink accent for subheadings */
+        }
+        .text-yellow-900 { color: #333333; } /* Titles to dark grey */
+        .text-yellow-800 { color: #EE63B6; } /* Accent color for sub-titles (pink) */
+        .bg-yellow-50 { background-color: transparent; } /* Ensure no light background */
+        .text-slate-800 { color: #333333; } /* General text color to dark grey */
+        .text-slate-600 { color: #555555; } /* Secondary text color to medium grey */
+        .bg-white { background-color: transparent; } /* Remove white backgrounds for sections */
+        .shadow-lg { box-shadow: none; } /* Remove default shadows, use custom shadow */
+        .shadow-md { box-shadow: none; } /* Remove default shadows */
+        .border-yellow-200 { border-color: #D0D0D0; } /* Light grey border */
+        .bg-green-700 { background-color: #6CBF4F; } /* Generate button color to green */
+        .hover:bg-green-800:hover { background-color: #5AA844; } /* Generate button hover color to darker green */
     </style>
-  </head>
-  <body class="bg-yellow-50 text-slate-800">
-    <input type="checkbox" id="language-toggle" class="lang-toggle hidden" />
+</head>
+<body class="text-slate-800">
+
+    <input type="checkbox" id="language-toggle" class="lang-toggle hidden">
 
     <header class="py-8">
-      <div class="container mx-auto px-4 text-center">
-        <h1 class="text-3xl md:text-4xl font-bold text-yellow-900 mb-2">
-          Transforming Business with AI & Full-Stack Solutions
-        </h1>
-        <p class="text-lg text-slate-600 max-w-3xl mx-auto lang-en">
-          An interactive portfolio of practical projects tailored for the
-          Cameroonian market.
-        </p>
-        <p class="text-lg text-slate-600 max-w-3xl mx-auto lang-fr">
-          Un portfolio interactif de projets pratiques adaptés au marché
-          camerounais.
-        </p>
-      </div>
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-yellow-900 mb-2">Transforming Business with AI & Full-Stack Solutions</h1>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto lang-en">An interactive portfolio of practical projects tailored for the Cameroonian market.</p>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto lang-fr">Un portfolio interactif de projets pratiques adaptés au marché camerounais.</p>
+        </div>
     </header>
 
     <main class="container mx-auto p-4">
-      <section id="intro" class="mb-12">
-        <div
-          class="grid md:grid-cols-2 gap-8 items-center bg-white p-6 rounded-2xl shadow-md"
-        >
-          <div class="text-slate-700">
-            <h3 class="text-2xl font-bold text-yellow-900 mb-4 lang-en">
-              Understanding the Economic Landscape
-            </h3>
-            <h3 class="text-2xl font-bold text-yellow-900 mb-4 lang-fr">
-              Comprendre le Paysage Économique
-            </h3>
-            <p class="mb-4 lang-en">
-              Cameroon's economy is a blend of a dominant service sector,
-              resource-rich industries, and a vital agricultural backbone. Our
-              solutions are designed to unlock value across these key areas,
-              addressing the unique challenges and opportunities within each.
-            </p>
-            <p class="mb-4 lang-fr">
-              L'économie du Cameroun est un mélange d'un secteur des services
-              dominant, d'industries riches en ressources et d'une base agricole
-              vitale. Nos solutions sont conçues pour libérer de la valeur dans
-              ces domaines clés, en relevant les défis et opportunités uniques
-              de chacun.
-            </p>
-          </div>
-          <div>
-            <h3
-              class="text-center text-lg font-semibold text-yellow-900 mb-2 lang-en"
-            >
-              GDP Contribution by Sector
-            </h3>
-            <h3
-              class="text-center text-lg font-semibold text-yellow-900 mb-2 lang-fr"
-            >
-              Contribution au PIB par Secteur
-            </h3>
-            <div class="chart-container">
-              <canvas id="gdpChart"></canvas>
+        <section id="intro" class="mb-12">
+            <div class="grid md:grid-cols-2 gap-8 items-center glass-container p-6">
+                <div class="text-slate-700">
+                    <h3 class="text-2xl font-bold text-yellow-900 mb-4 lang-en">Understanding the Economic Landscape</h3>
+                    <h3 class="text-2xl font-bold text-yellow-900 mb-4 lang-fr">Comprendre le Paysage Économique</h3>
+                    <p class="mb-4 lang-en">Cameroon's economy is a blend of a dominant service sector, resource-rich industries, and a vital agricultural backbone. Our solutions are designed to unlock value across these key areas, addressing the unique challenges and opportunities within each.</p>
+                    <p class="mb-4 lang-fr">L'économie du Cameroun est un mélange d'un secteur des services dominant, d'industries riches en ressources et d'une base agricole vitale. Nos solutions sont conçues pour libérer de la valeur dans ces domaines clés, en relevant les défis et opportunités uniques de chacun.</p>
+                </div>
+                <div>
+                    <h3 class="text-center text-lg font-semibold text-yellow-900 mb-2 lang-en">GDP Contribution by Sector</h3>
+                    <h3 class="text-center text-lg font-semibold text-yellow-900 mb-2 lang-fr">Contribution au PIB par Secteur</h3>
+                    <div class="chart-container">
+                        <canvas id="gdpChart"></canvas>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="projects" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
-        <div class="text-center mb-6">
-          <h3 class="text-2xl font-bold text-yellow-900 lang-en">
-            Our Project Showcase
-          </h3>
-          <h3 class="text-2xl font-bold text-yellow-900 lang-fr">
-            Notre Vitrine de Projets
-          </h3>
-          <p class="text-slate-600 max-w-2xl mx-auto mt-2 lang-en">
-            Filter by industry to discover how we can solve your specific
-            challenges. Use the toggle to switch languages.
-          </p>
-          <p class="text-slate-600 max-w-2xl mx-auto mt-2 lang-fr">
-            Filtrez par secteur pour découvrir comment nous pouvons résoudre vos
-            défis spécifiques. Utilisez le bouton pour changer de langue.
-          </p>
-        </div>
+        <section id="projects" class="glass-container p-6 md:p-8">
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-yellow-900 lang-en">Our Project Showcase</h3>
+                <h3 class="text-2xl font-bold text-yellow-900 lang-fr">Notre Vitrine de Projets</h3>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2 lang-en">Filter by industry to discover how we can solve your specific challenges. Use the toggle to switch languages.</p>
+                <p class="text-slate-600 max-w-2xl mx-auto mt-2 lang-fr">Filtrez par secteur pour découvrir comment nous pouvons résoudre vos défis spécifiques. Utilisez le bouton pour changer de langue.</p>
+            </div>
 
-        <div
-          class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8"
-        >
-          <span class="font-medium text-slate-700 lang-en">English</span>
-          <span class="font-medium text-slate-700 lang-fr">Français</span>
-          <label
-            for="language-toggle"
-            class="relative inline-flex items-center cursor-pointer"
-          >
-            <span class="relative">
-              <span class="block w-14 h-8 bg-slate-200 rounded-full"></span>
-              <span
-                class="absolute left-1 top-1 block w-6 h-6 bg-yellow-800 rounded-full transition-transform duration-300 ease-in-out transform lang-toggle-dot"
-              ></span>
-            </span>
-          </label>
-          <span class="font-medium text-slate-700 lang-en">Français</span>
-          <span class="font-medium text-slate-700 lang-fr">English</span>
-        </div>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-8">
+                <span class="font-medium text-slate-600 lang-en">English</span>
+                <span class="font-medium text-slate-600 lang-fr">Français</span>
+                <label for="language-toggle" class="relative inline-flex items-center cursor-pointer">
+                    <span class="relative">
+                        <span class="block w-14 h-8 bg-slate-700 rounded-full"></span>
+                        <span class="absolute left-1 top-1 block w-6 h-6 bg-yellow-800 rounded-full transition-transform duration-300 ease-in-out transform lang-toggle-dot"></span>
+                    </span>
+                </label>
+                <span class="font-medium text-slate-600 lang-en">Français</span>
+                <span class="font-medium text-slate-600 lang-fr">English</span>
+            </div>
 
-        <nav
-          id="project-filters"
-          class="flex flex-wrap justify-center gap-2 mb-8"
-        >
-          <button
-            data-filter="all"
-            class="nav-button active text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            All / Tous
-          </button>
-          <button
-            data-filter="school"
-            class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            🏫 School / École
-          </button>
-          <button
-            data-filter="health"
-            class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            ⚕️ Health / Santé
-          </button>
-          <button
-            data-filter="education"
-            class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            🎓 Education
-          </button>
-          <button
-            data-filter="insurance"
-            class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            🏦 Insurance / Assurance
-          </button>
-          <button
-            data-filter="service"
-            class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800"
-          >
-            🚚 Service
-          </button>
-        </nav>
+            <nav id="project-filters" class="flex flex-wrap justify-center gap-2 mb-8">
+                <button data-filter="all" class="nav-button active text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">All / Tous</button>
+                <button data-filter="school" class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">🏫 School / École</button>
+                <button data-filter="health" class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">⚕️ Health / Santé</button>
+                <button data-filter="education" class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">🎓 Education</button>
+                <button data-filter="insurance" class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">🏦 Insurance / Assurance</button>
+                <button data-filter="service" class="nav-button text-sm sm:text-base font-semibold py-2 px-4 rounded-full border-2 border-yellow-800">🚚 Service</button>
+            </nav>
 
-        <div id="accordion-container" class="space-y-4">
-          <!-- Projects will be dynamically inserted here by JavaScript -->
-        </div>
-      </section>
+            <div class="text-center my-8">
+                <button id="generate-idea-btn" class="bg-green-700 text-white font-bold py-3 px-6 rounded-lg">
+                    ✨ Generate New Project Idea / Générer une Nouvelle Idée de Projet
+                </button>
+                <p id="loading-indicator" class="text-slate-600 mt-4 hidden">Generating idea... / Génération de l'idée en cours...</p>
+            </div>
+            
+            <div id="generated-idea-container" class="space-y-4 mb-8">
+                <!-- Generated project ideas will appear here -->
+            </div>
+
+            <div id="accordion-container" class="space-y-4">
+                <!-- Projects will be dynamically inserted here by JavaScript -->
+            </div>
+        </section>
+
+        <section id="pedigree" class="my-16">
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-bold text-yellow-900 lang-en">Our Expert Pedigree</h3>
+                <h3 class="text-2xl font-bold text-yellow-900 lang-fr">Notre Pedigree d'Experts</h3>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-container p-6">
+                    <h4 class="text-xl font-bold text-yellow-900 mb-4">Brice Donald Abodo Brice</h4>
+                    <p class="font-semibold text-yellow-800 mb-2 lang-en">Data Analyst & AI/ML Specialist</p>
+                    <p class="font-semibold text-yellow-800 mb-2 lang-fr">Analyste de Données & Spécialiste IA/ML</p>
+                    <div class="mb-4">
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-en">Core Skills:</h5>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-fr">Compétences Clés :</h5>
+                        <ul class="list-disc list-inside text-slate-600 text-sm">
+                            <li class="lang-en">Data Analysis & Big Data: Python (Pandas, NumPy), SQL, PySpark, Hadoop, ClickHouse, PostgreSQL</li>
+                            <li class="lang-fr">Analyse de Données & Big Data: Python (Pandas, NumPy), SQL, PySpark, Hadoop, ClickHouse, PostgreSQL</li>
+                            <li class="lang-en">NLP & Machine Learning: BERT, GPT, RNN, LSTM, DistilBERT, FFN, Conv1D, Scikit-Learn, PyTorch, TensorFlow</li>
+                            <li class="lang-fr">PNL & Apprentissage Automatique: BERT, GPT, RNN, LSTM, DistilBERT, FFN, Conv1D, Scikit-Learn, PyTorch, TensorFlow</li>
+                            <li class="lang-en">Data Visualization: Power BI, Tableau, Matplotlib, Seaborn</li>
+                            <li class="lang-fr">Visualisation de Données: Power BI, Tableau, Matplotlib, Seaborn</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-en">Experience Highlights:</h5>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-fr">Points Forts de l'Expérience :</h5>
+                        <ul class="list-disc list-inside text-slate-600 text-sm">
+                            <li class="lang-en">Over three years in Data Analysis, Machine Learning, and NLP.</li>
+                            <li class="lang-fr">Plus de trois ans en Analyse de Données, Apprentissage Automatique et PNL.</li>
+                            <li class="lang-en">Proven ability to develop and deploy advanced models.</li>
+                            <li class="lang-fr">Capacité avérée à développer et déployer des modèles avancés.</li>
+                            <li class="lang-en">Solving real-world problems with AI.</li>
+                            <li class="lang-fr">Résolution de problèmes concrets avec l'IA.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="glass-container p-6">
+                    <h4 class="text-xl font-bold text-yellow-900 mb-4">Joel GUIGOLO</h4>
+                    <p class="font-semibold text-yellow-800 mb-2 lang-en">Full-Stack Software Developer</p>
+                    <p class="font-semibold text-yellow-800 mb-2 lang-fr">Développeur Logiciel Full-Stack</p>
+                    <div class="mb-4">
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-en">Core Skills:</h5>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-fr">Compétences Clés :</h5>
+                        <ul class="list-disc list-inside text-slate-600 text-sm">
+                            <li class="lang-en">Frontend: JavaScript, HTML/CSS, Modern Frameworks</li>
+                            <li class="lang-fr">Frontend: JavaScript, HTML/CSS, Frameworks Modernes</li>
+                            <li class="lang-en">Backend: Java, RESTful APIs, Database Integration (PostgreSQL)</li>
+                            <li class="lang-fr">Backend: Java, API RESTful, Intégration de Bases de Données (PostgreSQL)</li>
+                            <li class="lang-en">Web Application Architecture & Security</li>
+                            <li class="lang-fr">Architecture d'Applications Web & Sécurité</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-en">Experience Highlights:</h5>
+                        <h5 class="font-semibold text-yellow-800 mb-1 lang-fr">Points Forts de l'Expérience :</h5>
+                        <ul class="list-disc list-inside text-slate-600 text-sm">
+                            <li class="lang-en">Expert in creating robust, scalable, and secure web applications.</li>
+                            <li class="lang-fr">Expert dans la création d'applications web robustes, évolutives et sécurisées.</li>
+                            <li class="lang-en">Seamless integration of AI/ML models into functional platforms.</li>
+                            <li class="lang-fr">Intégration transparente de modèles IA/ML dans des plateformes fonctionnelles.</li>
+                            <li class="lang-en">Building user-friendly and efficient digital solutions.</li>
+                            <li class="lang-fr">Construction de solutions numériques conviviales et efficaces.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <footer class="text-center border-t border-yellow-200 pt-8 mt-12 pb-8">
-      <h3 class="text-2xl font-bold text-yellow-900 lang-en">
-        Ready to Innovate?
-      </h3>
-      <h3 class="text-2xl font-bold text-yellow-900 lang-fr">
-        Prêt à Innover ?
-      </h3>
-      <p class="text-slate-600 mt-2 mb-4 max-w-xl mx-auto lang-en">
-        Let's discuss how our team can build a solution to drive your
-        organization's growth.
-      </p>
-      <p class="text-slate-600 mt-2 mb-4 max-w-xl mx-auto lang-fr">
-        Discutons de la manière dont notre équipe peut créer une solution pour
-        stimuler la croissance de votre organisation.
-      </p>
-      <a
-        href="mailto:boodscode@gmail.com"
-        class="inline-block bg-yellow-800 text-white font-bold py-3 px-6 rounded-lg hover:bg-yellow-900 transition-colors duration-300"
-      >
-        Contact Us / Contactez-nous
-      </a>
+    <footer class="text-center border-t border-gray-700 pt-8 mt-12 pb-8">
+         <h3 class="text-2xl font-bold text-yellow-900 lang-en">Ready to Innovate?</h3>
+         <h3 class="text-2xl font-bold text-yellow-900 lang-fr">Prêt à Innover ?</h3>
+         <p class="text-slate-600 mt-2 mb-4 max-w-xl mx-auto lang-en">Let's discuss how our team can build a solution to drive your organization's growth.</p>
+         <p class="text-slate-600 mt-2 mb-4 max-w-xl mx-auto lang-fr">Discutons de la manière dont notre équipe peut créer une solution pour stimuler la croissance de votre organisation.</p>
+         <a href="mailto:boodscode@gmail.com" class="inline-block bg-yellow-800 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-600 transition-colors duration-300">
+            Contact Us / Contactez-nous
+         </a>
     </footer>
 
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener('DOMContentLoaded', () => {
         const projectsData = [
-          {
-            id: 1,
-            category: "school",
-            title_en: "Intelligent Student Performance & Engagement Platform",
-            title_fr:
-              "Plateforme Intelligente de Performance et d'Engagement des Élèves",
-            details_en: {
-              goal: "To predict student academic performance, identify at-risk students early, and provide personalized learning recommendations.",
-              problem:
-                "High dropout rates, inconsistent academic performance, and difficulty in providing individualized attention.",
-              impact:
-                "Creates a proactive educational environment, reduces student failure, and fosters a more engaged learning community.",
-              benefit:
-                "For Schools: Improved student retention, higher graduation rates, enhanced reputation. For Students: Personalized learning paths, timely academic support.",
-            },
-            details_fr: {
-              goal: "Prédire la performance académique des élèves, identifier les élèves à risque tôt et fournir des recommandations d'apprentissage personnalisées.",
-              problem:
-                "Taux d'abandon élevés, performance académique incohérente et difficulté à fournir une attention individualisée.",
-              impact:
-                "Crée un environnement éducatif proactif, réduit l'échec scolaire et favorise une communauté d'apprentissage plus engagée.",
-              benefit:
-                "Pour les Écoles: Amélioration de la rétention, taux de diplomation plus élevés, réputation améliorée. Pour les Élèves: Parcours d'apprentissage personnalisés, soutien opportun.",
-            },
-          },
-          {
-            id: 2,
-            category: "school",
-            title_en: "Automated Exam Grading & Feedback System",
-            title_fr:
-              "Système Automatisé de Correction d'Examens et de Rétroaction",
-            details_en: {
-              goal: "To automate the grading of certain types of exams and provide instant, constructive feedback.",
-              problem:
-                "Manual grading is time-consuming, delays feedback, and has potential for human bias.",
-              impact:
-                "Frees up teacher time, accelerates the learning cycle, and ensures consistent grading standards.",
-              benefit:
-                "For Schools: Increased teacher efficiency, enhanced data collection. For Students: Immediate feedback for self-correction, reduced anxiety.",
-            },
-            details_fr: {
-              goal: "Automatiser la correction de certains types d'examens et fournir une rétroaction instantanée.",
-              problem:
-                "La correction manuelle est chronophage, retarde la rétroaction et présente un risque de biais humain.",
-              impact:
-                "Libère le temps des enseignants, accélère le cycle d'apprentissage et assure des normes de correction cohérentes.",
-              benefit:
-                "Pour les Écoles: Efficacité accrue des enseignants, meilleure collecte de données. Pour les Élèves: Rétroaction immédiate pour l'auto-correction, anxiété réduite.",
-            },
-          },
-          {
-            id: 3,
-            category: "school",
-            title_en: "AI-Powered Student Attendance & Behavior Monitoring",
-            title_fr:
-              "Surveillance de la Présence et du Comportement des Élèves par IA",
-            details_en: {
-              goal: "To automate attendance tracking using facial recognition and identify unusual behavioral patterns.",
-              problem:
-                "Manual attendance is inefficient and prone to errors; difficulty in monitoring student engagement.",
-              impact:
-                "Improves accuracy of attendance records, provides early alerts for student welfare issues.",
-              benefit:
-                "For Schools: Streamlined processes, enhanced safety. For Parents: Assurance of child's presence.",
-            },
-            details_fr: {
-              goal: "Automatiser le suivi de la présence par reconnaissance faciale et identifier les comportements inhabituels.",
-              problem:
-                "La prise de présence manuelle est inefficace et sujette aux erreurs; difficulté de suivi de l'engagement.",
-              impact:
-                "Améliore la précision des registres de présence, fournit des alertes précoces pour le bien-être des élèves.",
-              benefit:
-                "Pour les Écoles: Processus rationalisés, sécurité renforcée. Pour les Parents: Assurance de la présence de l'enfant.",
-            },
-          },
-          {
-            id: 4,
-            category: "school",
-            title_en: "Personalized Tutoring & Resource Matching System",
-            title_fr:
-              "Système de Jumelage Personnalisé pour le Tutorat et les Ressources",
-            details_en: {
-              goal: "To connect students with suitable tutors and learning resources based on their specific needs.",
-              problem:
-                "Students struggle to find effective tutoring; schools lack efficient matching mechanisms.",
-              impact:
-                "Optimizes learning support, improves academic performance, and makes resource discovery efficient.",
-              benefit:
-                "For Schools: Enhanced support ecosystem, improved success rates. For Students: Access to tailored help, faster progress.",
-            },
-            details_fr: {
-              goal: "Connecter les élèves avec des tuteurs et des ressources adaptés à leurs besoins spécifiques.",
-              problem:
-                "Les élèves peinent à trouver un tutorat efficace; les écoles manquent de mécanismes de jumelage efficaces.",
-              impact:
-                "Optimise le soutien à l'apprentissage, améliore les performances et rend la découverte des ressources efficace.",
-              benefit:
-                "Pour les Écoles: Écosystème de soutien amélioré, meilleurs taux de réussite. Pour les Élèves: Accès à une aide personnalisée, progrès plus rapides.",
-            },
-          },
-          {
-            id: 5,
-            category: "health",
-            title_en: "AI-Powered Medical Image Analysis & Diagnostic Support",
-            title_fr: "Analyse d'Images Médicales et Aide au Diagnostic par IA",
-            details_en: {
-              goal: "To assist medical professionals with faster and more accurate diagnosis from medical images (e.g., X-rays).",
-              problem:
-                "Shortage of specialized radiologists, delays in diagnosis, and potential for human error.",
-              impact:
-                "Accelerates diagnostic processes, improves accuracy, and democratizes access to medical expertise.",
-              benefit:
-                "For Hospitals: Reduced diagnostic time, increased patient throughput. For Patients: Earlier and more accurate diagnoses.",
-            },
-            details_fr: {
-              goal: "Aider les professionnels de santé à un diagnostic plus rapide et précis à partir d'images médicales (ex: rayons X).",
-              problem:
-                "Pénurie de radiologues spécialisés, retards de diagnostic et risque d'erreur humaine.",
-              impact:
-                "Accélère les diagnostics, améliore la précision et démocratise l'accès à l'expertise médicale.",
-              benefit:
-                "Pour les Hôpitaux: Temps de diagnostic réduit, débit de patients accru. Pour les Patients: Diagnostics plus précoces et plus précis.",
-            },
-          },
-          {
-            id: 6,
-            category: "health",
-            title_en: "Drug Supply Chain Optimization & Inventory Management",
-            title_fr:
-              "Optimisation de la Chaîne d'Approvisionnement en Médicaments et Gestion des Stocks",
-            details_en: {
-              goal: "To optimize the distribution and inventory of essential medicines, reducing stockouts and waste.",
-              problem:
-                "Inefficient supply chains lead to drug shortages and expiration of medicines.",
-              impact:
-                "Ensures consistent availability of life-saving drugs and reduces financial losses.",
-              benefit:
-                "For Health Facilities: Reliable access to medications, reduced costs. For Patients: Assurance of receiving prescribed medications.",
-            },
-            details_fr: {
-              goal: "Optimiser la distribution et l'inventaire des médicaments essentiels, réduisant les ruptures de stock et le gaspillage.",
-              problem:
-                "Des chaînes d'approvisionnement inefficaces entraînent des pénuries de médicaments et leur péremption.",
-              impact:
-                "Assure la disponibilité des médicaments vitaux et réduit les pertes financières.",
-              benefit:
-                "Pour les Établissements de Santé: Accès fiable aux médicaments, coûts réduits. Pour les Patients: Assurance de recevoir les médicaments prescrits.",
-            },
-          },
-          {
-            id: 7,
-            category: "health",
-            title_en: "Telemedicine Platform with AI Symptom Checker",
-            title_fr:
-              "Plateforme de Télémédecine avec Vérificateur de Symptômes par IA",
-            details_en: {
-              goal: "To provide remote medical consultations and initial symptom assessment, especially in rural areas.",
-              problem:
-                "Limited access to healthcare facilities and long wait times for non-emergency consultations.",
-              impact:
-                "Expands healthcare reach, reduces burden on physical clinics, and provides preliminary guidance.",
-              benefit:
-                "For Providers: Increased patient reach, optimized time. For Patients: Convenient access to medical advice, reduced travel costs.",
-            },
-            details_fr: {
-              goal: "Fournir des consultations à distance et une évaluation initiale des symptômes, surtout en zone rurale.",
-              problem:
-                "Accès limité aux établissements de santé et longs temps d'attente pour les consultations non urgentes.",
-              impact:
-                "Élargit la portée des soins, réduit la charge des cliniques et fournit des conseils préliminaires.",
-              benefit:
-                "Pour les Fournisseurs: Portée patient accrue, temps optimisé. Pour les Patients: Accès pratique aux conseils, coûts de déplacement réduits.",
-            },
-          },
-          {
-            id: 8,
-            category: "health",
-            title_en: "Medical Record Digitization & Information Retrieval",
-            title_fr:
-              "Numérisation des Dossiers Médicaux et Recherche d'Informations",
-            details_en: {
-              goal: "To digitize paper-based medical records and create an efficient retrieval system.",
-              problem:
-                "Inefficient paper-based records, difficulty accessing patient history, and risk of data loss.",
-              impact:
-                "Improves data accessibility, enhances continuity of care, and supports medical research.",
-              benefit:
-                "For Hospitals: Faster access to data, reduced administrative burden. For Patients: More accurate diagnoses and treatments.",
-            },
-            details_fr: {
-              goal: "Numériser les dossiers médicaux papier et créer un système de recherche efficace.",
-              problem:
-                "Dossiers papier inefficaces, difficulté d'accès à l'historique du patient et risque de perte de données.",
-              impact:
-                "Améliore l'accessibilité des données, la continuité des soins et soutient la recherche médicale.",
-              benefit:
-                "Pour les Hôpitaux: Accès plus rapide aux données, charge administrative réduite. Pour les Patients: Diagnostics et traitements plus précis.",
-            },
-          },
-          {
-            id: 9,
-            category: "education",
-            title_en: "E-learning Recommendation & Plagiarism Detection",
-            title_fr: "Recommandation E-learning & Détection de Plagiat",
-            details_en: {
-              goal: "To provide tailored educational content and ensure academic integrity by detecting plagiarism.",
-              problem:
-                "Generic learning paths leading to disengagement; challenge of maintaining academic honesty.",
-              impact:
-                "Enhances personalization of online education and upholds academic standards.",
-              benefit:
-                "For Institutions: Improved learner satisfaction, protection of reputation. For Learners: More engaging experiences, ethical practices.",
-            },
-            details_fr: {
-              goal: "Fournir un contenu éducatif sur mesure et garantir l'intégrité académique en détectant le plagiat.",
-              problem:
-                "Parcours d'apprentissage génériques menant au désengagement; défi de maintenir l'honnêteté académique.",
-              impact:
-                "Améliore la personnalisation de l'éducation en ligne et maintient les normes académiques.",
-              benefit:
-                "Pour les Institutions: Satisfaction des apprenants améliorée, protection de la réputation. Pour les Apprenants: Expériences plus engageantes, pratiques éthiques.",
-            },
-          },
-          {
-            id: 10,
-            category: "education",
-            title_en: "Job Skill Gap Analysis & Course Recommendation",
-            title_fr:
-              "Analyse des Lacunes en Compétences et Recommandation de Cours",
-            details_en: {
-              goal: "To analyze job market demands, identify skills gaps, and recommend relevant training.",
-              problem:
-                "Disconnect between educational output and industry needs; difficulty finding relevant training.",
-              impact:
-                "Fosters a more skilled and employable workforce and supports economic growth.",
-              benefit:
-                "For Institutions: Ability to offer in-demand courses. For Individuals: Clear skill development pathways, improved employability.",
-            },
-            details_fr: {
-              goal: "Analyser les demandes du marché du travail, identifier les lacunes en compétences et recommander des formations pertinentes.",
-              problem:
-                "Déconnexion entre l'offre éducative et les besoins de l'industrie; difficulté à trouver une formation pertinente.",
-              impact:
-                "Favorise une main-d'œuvre plus qualifiée et employable et soutient la croissance économique.",
-              benefit:
-                "Pour les Institutions: Capacité à offrir des cours en demande. Pour les Individus: Parcours clairs de développement, employabilité améliorée.",
-            },
-          },
-          {
-            id: 11,
-            category: "education",
-            title_en: "Language Learning App with AI Pronunciation Feedback",
-            title_fr:
-              "App d'Apprentissage des Langues avec Feedback de Prononciation IA",
-            details_en: {
-              goal: "Develop an interactive mobile app that helps users learn languages with real-time AI pronunciation feedback.",
-              problem:
-                "Difficulty practicing correct pronunciation without a native speaker; lack of engaging tools.",
-              impact:
-                "Improves language proficiency and facilitates cross-cultural communication.",
-              benefit:
-                "For Schools/Individuals: Enhanced learning, accelerated acquisition. For Business: Improved communication with partners.",
-            },
-            details_fr: {
-              goal: "Développer une application mobile interactive pour apprendre les langues avec une rétroaction de prononciation IA en temps réel.",
-              problem:
-                "Difficulté de pratiquer la prononciation sans locuteur natif; manque d'outils engageants.",
-              impact:
-                "Améliore la maîtrise des langues et facilite la communication interculturelle.",
-              benefit:
-                "Pour les Écoles/Individus: Apprentissage amélioré, acquisition accélérée. Pour les Entreprises: Communication améliorée avec les partenaires.",
-            },
-          },
-          {
-            id: 12,
-            category: "education",
-            title_en: "Automated Certificate Verification System",
-            title_fr: "Système Automatisé de Vérification de Certificats",
-            details_en: {
-              goal: "Create a secure system for verifying educational and professional qualifications to prevent fraud.",
-              problem:
-                "Widespread issue of fraudulent certificates, undermining trust in education and hiring.",
-              impact:
-                "Restores integrity to credentials, streamlines verification, and builds trust.",
-              benefit:
-                "For Employers: Faster, reliable background checks. For Institutions: Protection of reputation and legitimate credentials.",
-            },
-            details_fr: {
-              goal: "Créer un système sécurisé pour vérifier les qualifications éducatives et professionnelles afin de prévenir la fraude.",
-              problem:
-                "Problème répandu de certificats frauduleux, minant la confiance dans l'éducation et l'embauche.",
-              impact:
-                "Restaure l'intégrité des diplômes, rationalise la vérification et renforce la confiance.",
-              benefit:
-                "Pour les Employeurs: Vérifications d'antécédents plus rapides et fiables. Pour les Institutions: Protection de la réputation et des diplômes légitimes.",
-            },
-          },
-          {
-            id: 13,
-            category: "insurance",
-            title_en: "AI-Driven Fraud Detection & Policy Recommendation",
-            title_fr: "Détection de Fraude par IA & Recommandation de Polices",
-            details_en: {
-              goal: "To significantly reduce fraudulent claims and accurately recommend tailored insurance policies.",
-              problem:
-                "High financial losses due to fraud; inefficient manual claims processing; one-size-fits-all policies.",
-              impact:
-                "Protects profitability, streamlines operations, and improves customer trust.",
-              benefit:
-                "For Companies: Reduced fraud losses, faster processing. For Customers: Fairer premiums, quicker claims resolution.",
-            },
-            details_fr: {
-              goal: "Réduire significativement les réclamations frauduleuses et recommander des polices d'assurance sur mesure.",
-              problem:
-                "Pertes financières élevées dues à la fraude; traitement manuel inefficace; polices uniques.",
-              impact:
-                "Protège la rentabilité, rationalise les opérations et améliore la confiance des clients.",
-              benefit:
-                "Pour les Entreprises: Pertes de fraude réduites, traitement plus rapide. Pour les Clients: Primes plus justes, résolution rapide.",
-            },
-          },
-          {
-            id: 14,
-            category: "insurance",
-            title_en: "Automated Damage Assessment via Computer Vision",
-            title_fr:
-              "Évaluation Automatisée des Dommages par Vision par Ordinateur",
-            details_en: {
-              goal: "Enable rapid and objective assessment of damage using images/videos submitted by policyholders.",
-              problem:
-                "Slow and costly manual damage assessment processes; potential for inconsistent evaluations.",
-              impact:
-                "Accelerates claims processing, reduces operational costs, and improves customer satisfaction.",
-              benefit:
-                "For Companies: Faster claims settlement, lower inspection costs. For Policyholders: Quicker resolution of claims.",
-            },
-            details_fr: {
-              goal: "Permettre une évaluation rapide et objective des dommages à l'aide d'images/vidéos soumises par les assurés.",
-              problem:
-                "Processus d'évaluation manuels lents et coûteux; évaluations potentiellement incohérentes.",
-              impact:
-                "Accélère le traitement des sinistres, réduit les coûts opérationnels et améliore la satisfaction client.",
-              benefit:
-                "Pour les Entreprises: Règlement plus rapide des sinistres, coûts d'inspection réduits. Pour les Assurés: Résolution plus rapide des sinistres.",
-            },
-          },
-          {
-            id: 15,
-            category: "insurance",
-            title_en: "Customer Sentiment Analysis for Service Improvement",
-            title_fr: "Analyse du Sentiment Client pour Améliorer le Service",
-            details_en: {
-              goal: "Analyze customer feedback from various channels to understand sentiment and improve service.",
-              problem:
-                "Difficulty processing large volumes of unstructured feedback; reactive customer service.",
-              impact:
-                "Leads to proactive service improvements, higher customer satisfaction, and stronger brand loyalty.",
-              benefit:
-                "For Companies: Data-driven insights, reduced churn. For Customers: Feeling heard and experiencing improved service.",
-            },
-            details_fr: {
-              goal: "Analyser les retours clients de divers canaux pour comprendre le sentiment et améliorer le service.",
-              problem:
-                "Difficulté à traiter de grands volumes de retours non structurés; service client réactif.",
-              impact:
-                "Mène à des améliorations proactives, une plus grande satisfaction client et une fidélité accrue.",
-              benefit:
-                "Pour les Entreprises: Idées basées sur les données, réduction du taux de désabonnement. Pour les Clients: Se sentir écouté et bénéficier d'un service amélioré.",
-            },
-          },
-          {
-            id: 16,
-            category: "insurance",
-            title_en: "Dynamic Pricing Models for Insurance Policies",
-            title_fr:
-              "Modèles de Tarification Dynamique pour Polices d'Assurance",
-            details_en: {
-              goal: "Develop models that dynamically adjust insurance premiums based on real-time data and risk.",
-              problem:
-                "Static pricing may not accurately reflect risk or market fluctuations, leading to lost revenue.",
-              impact:
-                "Optimizes profitability, enhances market competitiveness, and allows for granular risk assessment.",
-              benefit:
-                "For Companies: Increased revenue, better risk management. For Customers: Potentially fairer premiums.",
-            },
-            details_fr: {
-              goal: "Développer des modèles qui ajustent dynamiquement les primes d'assurance en fonction des données en temps réel et du risque.",
-              problem:
-                "La tarification statique peut ne pas refléter le risque ou les fluctuations du marché, entraînant une perte de revenus.",
-              impact:
-                "Optimise la rentabilité, améliore la compétitivité et permet une évaluation granulaire des risques.",
-              benefit:
-                "Pour les Entreprises: Augmentation des revenus, meilleure gestion des risques. Pour les Clients: Primes potentiellement plus justes.",
-            },
-          },
-          {
-            id: 17,
-            category: "service",
-            title_en: "Intelligent Customer Service Chatbot & Predictive Churn",
-            title_fr:
-              "Chatbot de Service Client Intelligent & Prédiction du Désabonnement",
-            details_en: {
-              goal: "Provide 24/7 support via an intelligent chatbot and proactively identify customers at risk of churning.",
-              problem:
-                "High call center volumes, long wait times, inconsistent service quality, and reactive retention efforts.",
-              impact:
-                "Enhances customer experience, reduces costs, and improves customer loyalty.",
-              benefit:
-                "For Companies: Lower support costs, reduced churn. For Customers: Instant answers, personalized support.",
-            },
-            details_fr: {
-              goal: "Fournir un support 24/7 via un chatbot intelligent et identifier les clients à risque de désabonnement.",
-              problem:
-                "Volumes élevés de centres d'appels, longs temps d'attente, qualité de service incohérente.",
-              impact:
-                "Améliore l'expérience client, réduit les coûts et améliore la fidélité.",
-              benefit:
-                "Pour les Entreprises: Coûts de support réduits, moins de désabonnement. Pour les Clients: Réponses instantanées, support personnalisé.",
-            },
-          },
-          {
-            id: 18,
-            category: "service",
-            title_en: "Logistics Route Optimization & Fleet Management",
-            title_fr:
-              "Optimisation des Itinéraires Logistiques & Gestion de Flotte",
-            details_en: {
-              goal: "Optimize delivery routes for service vehicles, reduce fuel consumption, and improve delivery times.",
-              problem:
-                "Inefficient routing leading to higher operational costs, delayed deliveries, and environmental impact.",
-              impact:
-                "Significant cost savings, improved service reliability, and reduced carbon footprint.",
-              benefit:
-                "For Companies: Lower fuel costs, increased capacity. For Customers: Faster and predictable delivery times.",
-            },
-            details_fr: {
-              goal: "Optimiser les itinéraires de livraison, réduire la consommation de carburant et améliorer les délais.",
-              problem:
-                "Routage inefficace entraînant des coûts élevés, des retards et un impact environnemental.",
-              impact:
-                "Économies de coûts, fiabilité du service améliorée et empreinte carbone réduite.",
-              benefit:
-                "Pour les Entreprises: Coûts de carburant réduits, capacité accrue. Pour les Clients: Délais de livraison plus rapides.",
-            },
-          },
-          {
-            id: 19,
-            category: "service",
-            title_en: "Predictive Maintenance for Industrial Equipment",
-            title_fr: "Maintenance Prédictive pour Équipements Industriels",
-            details_en: {
-              goal: "Predict potential failures in industrial machinery before they occur to minimize downtime.",
-              problem:
-                "Unexpected equipment breakdowns leading to production losses, high repair costs, and safety risks.",
-              impact:
-                "Maximizes operational uptime, extends equipment lifespan, and reduces maintenance costs.",
-              benefit:
-                "For Companies: Increased productivity, reduced costs, enhanced safety. For Providers: Offer value-added services.",
-            },
-            details_fr: {
-              goal: "Prédire les pannes potentielles des machines industrielles pour minimiser les temps d'arrêt.",
-              problem:
-                "Pannes inattendues entraînant des pertes de production, des coûts élevés et des risques.",
-              impact:
-                "Maximise le temps de fonctionnement, prolonge la durée de vie de l'équipement et réduit les coûts de maintenance.",
-              benefit:
-                "Pour les Entreprises: Productivité accrue, coûts réduits, sécurité améliorée. Pour les Fournisseurs: Offrir des services à valeur ajoutée.",
-            },
-          },
-          {
-            id: 20,
-            category: "service",
-            title_en: "Automated Invoice & Document Processing",
-            title_fr: "Traitement Automatisé des Factures & Documents",
-            details_en: {
-              goal: "Automate the extraction of key information from invoices and other business documents.",
-              problem:
-                "Time-consuming and error-prone manual processing of large volumes of documents.",
-              impact:
-                "Improves operational efficiency, enhances data accuracy, and accelerates financial workflows.",
-              benefit:
-                "For All Businesses: Reduced administrative costs, faster reporting. For Employees: Frees up staff from repetitive tasks.",
-            },
-            details_fr: {
-              goal: "Automatiser l'extraction d'informations clés des factures et autres documents commerciaux.",
-              problem:
-                "Traitement manuel chronophage et sujet aux erreurs de grands volumes de documents.",
-              impact:
-                "Améliore l'efficacité opérationnelle, la précision des données et accélère les flux financiers.",
-              benefit:
-                "Pour toutes les Entreprises: Coûts administratifs réduits, rapports plus rapides. Pour les Employés: Libère le personnel des tâches répétitives.",
-            },
-          },
-          {
-            id: 21,
-            category: "service",
-            title_en: "HR Talent Matching & Skill Development",
-            title_fr: "Jumelage de Talents RH & Développement des Compétences",
-            details_en: {
-              goal: "Use AI to match job applicants with suitable roles and identify internal employees' skill gaps.",
-              problem:
-                "Inefficient hiring processes; difficulty in identifying and nurturing internal talent.",
-              impact:
-                "Improves recruitment efficiency, enhances employee retention, and fosters a developing workforce.",
-              benefit:
-                "For Companies: Reduced time-to-hire, lower costs. For Employees: Clear career development paths.",
-            },
-            details_fr: {
-              goal: "Utiliser l'IA pour jumeler les candidats à des postes et identifier les lacunes en compétences des employés.",
-              problem:
-                "Processus de recrutement inefficaces; difficulté à identifier et à cultiver les talents internes.",
-              impact:
-                "Améliore l'efficacité du recrutement, la rétention des employés et favorise une main-d'œuvre en développement.",
-              benefit:
-                "Pour les Entreprises: Temps de recrutement réduit, coûts inférieurs. Pour les Employés: Parcours de carrière clairs.",
-            },
-          },
-          {
-            id: 22,
-            category: "service",
-            title_en: "Market Trend Analysis for Consulting Firms",
-            title_fr:
-              "Analyse des Tendances du Marché pour Cabinets de Conseil",
-            details_en: {
-              goal: "Provide tools to analyze market data to identify trends, landscapes, and opportunities.",
-              problem:
-                "Manual market research is time-consuming and may miss subtle trends; difficulty synthesizing data.",
-              impact:
-                "Enhances the quality and speed of strategic advice, enabling more impactful recommendations.",
-              benefit:
-                "For Firms: Increased research efficiency, stronger competitive edge. For Clients: More accurate market insights.",
-            },
-            details_fr: {
-              goal: "Fournir des outils pour analyser les données de marché afin d'identifier les tendances, les paysages et les opportunités.",
-              problem:
-                "La recherche de marché manuelle est longue et peut manquer des tendances; difficulté de synthèse.",
-              impact:
-                "Améliore la qualité et la vitesse des conseils stratégiques, permettant des recommandations plus percutantes.",
-              benefit:
-                "Pour les Cabinets: Efficacité de recherche accrue, avantage concurrentiel renforcé. Pour les Clients: Informations de marché plus précises.",
-            },
-          },
-          {
-            id: 23,
-            category: "service",
-            title_en: "Social Media Brand Monitoring & Sentiment Analysis",
-            title_fr:
-              "Surveillance de Marque et Analyse de Sentiment sur les Médias Sociaux",
-            details_en: {
-              goal: "To monitor social media conversations, understand public sentiment towards a brand or topic, and identify emerging trends.",
-              problem:
-                "Overwhelming volume of social media data; difficulty in manually tracking brand perception and competitor activity.",
-              impact:
-                "Enables proactive reputation management, informed marketing strategies, and timely crisis response.",
-              benefit:
-                "For Businesses: Improved brand image, enhanced customer engagement, competitive intelligence, and reduced risk of negative publicity.",
-            },
-            details_fr: {
-              goal: "Surveiller les conversations sur les médias sociaux, comprendre le sentiment public envers une marque ou un sujet, et identifier les tendances émergentes.",
-              problem:
-                "Volume écrasant de données des médias sociaux; difficulté à suivre manuellement la perception de la marque et l'activité des concurrents.",
-              impact:
-                "Permet une gestion proactive de la réputation, des stratégies marketing éclairées et une réponse rapide aux crises.",
-              benefit:
-                "Pour les Entreprises: Amélioration de l'image de marque, engagement client accru, veille concurrentielle et réduction des risques de publicité négative.",
-            },
-          },
-          {
-            id: 24,
-            category: "service",
-            title_en: "Automated News & Document Summarization",
-            title_fr: "Synthèse Automatisée d'Actualités et de Documents",
-            details_en: {
-              goal: "To automatically generate concise summaries of large volumes of news articles, reports, or internal documents.",
-              problem:
-                "Information overload; time-consuming manual summarization for decision-makers and analysts.",
-              impact:
-                "Accelerates information consumption, improves decision-making speed, and enhances knowledge management.",
-              benefit:
-                "For Businesses: Increased efficiency in information processing, better strategic insights, and improved productivity for research teams.",
-            },
-            details_fr: {
-              goal: "Générer automatiquement des résumés concis de grands volumes d'articles de presse, de rapports ou de documents internes.",
-              problem:
-                "Surcharge d'informations; synthèse manuelle chronophage pour les décideurs et les analystes.",
-              impact:
-                "Accélère la consommation d'informations, améliore la vitesse de prise de décision et optimise la gestion des connaissances.",
-              benefit:
-                "Pour les Entreprises: Efficacité accrue dans le traitement de l'information, meilleures informations stratégiques et productivité améliorée pour les équipes de recherche.",
-            },
-          },
-          {
-            id: 25,
-            category: "service",
-            title_en: "Legal Document NER & Information Extraction",
-            title_fr: "Extraction d'Informations et NER de Documents Légaux",
-            details_en: {
-              goal: "To automatically identify and extract key entities (e.g., names, dates, clauses, case numbers) from legal documents.",
-              problem:
-                "Manual review of legal documents is slow, prone to human error, and costly; difficulty in finding specific information quickly.",
-              impact:
-                "Streamlines legal research, contract review, and compliance processes, reducing operational costs and risks.",
-              benefit:
-                "For Legal Firms/Departments: Faster document processing, improved accuracy in data extraction, and enhanced compliance with legal requirements.",
-            },
-            details_fr: {
-              goal: "Identifier et extraire automatiquement les entités clés (ex: noms, dates, clauses, numéros de dossier) des documents juridiques.",
-              problem:
-                "L'examen manuel des documents juridiques est lent, sujet aux erreurs humaines et coûteux; difficulté à trouver rapidement des informations spécifiques.",
-              impact:
-                "Rationalise la recherche juridique, l'examen des contrats et les processus de conformité, réduisant les coûts opérationnels et les risques.",
-              benefit:
-                "Pour les Cabinets/Départements Juridiques: Traitement plus rapide des documents, précision améliorée dans l'extraction des données et conformité accrue aux exigences légales.",
-            },
-          },
-          {
-            id: 26,
-            category: "service",
-            title_en: "AI-Powered Explanations for Complex Regulations",
-            title_fr: "Explications par IA pour Réglementations Complexes",
-            details_en: {
-              goal: "To provide clear, concise, and understandable explanations of complex legal or regulatory texts using AI.",
-              problem:
-                "Difficulty for businesses and citizens to comprehend intricate legal jargon and regulatory requirements, leading to non-compliance or confusion.",
-              impact:
-                "Increases regulatory compliance, reduces legal risks, and empowers users with clear information.",
-              benefit:
-                "For Businesses/Public Sector: Improved understanding of compliance obligations, reduced legal fees, and better public engagement with regulations.",
-            },
-            details_fr: {
-              goal: "Fournir des explications claires, concises et compréhensibles de textes légaux ou réglementaires complexes à l'aide de l'IA.",
-              problem:
-                "Difficulté pour les entreprises et les citoyens à comprendre le jargon juridique complexe et les exigences réglementaires, entraînant une non-conformité ou une confusion.",
-              impact:
-                "Augmente la conformité réglementaire, réduit les risques juridiques et donne aux utilisateurs des informations claires.",
-              benefit:
-                "Pour les Entreprises/Secteur Public: Meilleure compréhension des obligations de conformité, réduction des frais juridiques et meilleur engagement du public avec les réglementations.",
-            },
-          },
-          {
-            id: 27,
-            category: "service",
-            title_en: "Customer Review Analysis for Product Improvement",
-            title_fr:
-              "Analyse des Avis Clients pour l'Amélioration des Produits",
-            details_en: {
-              goal: "To analyze customer reviews and feedback to identify common themes, sentiment, and actionable insights for product or service improvement.",
-              problem:
-                "Vast amounts of unstructured customer feedback; difficulty in manually identifying key pain points or popular features.",
-              impact:
-                "Drives data-driven product development, enhances customer satisfaction, and fosters innovation based on real user needs.",
-              benefit:
-                "For Retail/Product Companies: Faster identification of product flaws, understanding of customer preferences, and more effective product roadmaps.",
-            },
-            details_fr: {
-              goal: "Analyser les avis et commentaires des clients pour identifier les thèmes communs, le sentiment et les informations exploitables pour l'amélioration des produits ou services.",
-              problem:
-                "Grandes quantités de commentaires clients non structurés; difficulté à identifier manuellement les points faibles clés ou les fonctionnalités populaires.",
-              impact:
-                "Impulse le développement de produits basé sur les données, améliore la satisfaction client et favorise l'innovation basée sur les besoins réels des utilisateurs.",
-              benefit:
-                "Pour les Entreprises de Vente au Détail/Produits: Identification plus rapide des défauts de produits, compréhension des préférences des clients et feuilles de route de produits plus efficaces.",
-            },
-          },
-          {
-            id: 28,
-            category: "service",
-            title_en: "Patent & Research Paper Information Retrieval",
-            title_fr:
-              "Recherche d'Informations sur les Brevets et Articles de Recherche",
-            details_en: {
-              goal: "To build an intelligent search and retrieval system for vast databases of patents, scientific papers, or technical reports.",
-              problem:
-                "Difficulty for R&D teams and innovators to efficiently find relevant prior art or research, leading to duplicated efforts or missed opportunities.",
-              impact:
-                "Accelerates innovation, improves research efficiency, and ensures comprehensive intellectual property analysis.",
-              benefit:
-                "For R&D Departments/Universities/Startups: Faster access to critical knowledge, reduced research cycles, and stronger patent applications.",
-            },
-            details_fr: {
-              goal: "Construire un système intelligent de recherche et de récupération d'informations pour de vastes bases de données de brevets, d'articles scientifiques ou de rapports techniques.",
-              problem:
-                "Difficulté pour les équipes de R&D et les innovateurs à trouver efficacement l'art antérieur ou la recherche pertinente, entraînant des efforts dupliqués ou des opportunités manquées.",
-              impact:
-                "Accélère l'innovation, améliore l'efficacité de la recherche et assure une analyse complète de la propriété intellectuelle.",
-              benefit:
-                "Pour les Départements R&D/Universités/Startups: Accès plus rapide aux connaissances critiques, cycles de recherche réduits et demandes de brevets plus solides.",
-            },
-          },
-          {
-            id: 29,
-            category: "insurance",
-            title_en: "AI-Powered Fraud Explanation System",
-            title_fr: "Système d'Explication de Fraude par IA",
-            details_en: {
-              goal: "To provide clear, human-readable explanations for why a claim has been flagged as potentially fraudulent by an AI system.",
-              problem:
-                "Lack of transparency in AI fraud detection models makes it difficult for human investigators to understand the reasoning and take appropriate action.",
-              impact:
-                "Increases trust in AI systems, improves the efficiency of fraud investigations, and ensures fair decision-making.",
-              benefit:
-                "For Insurance Companies: Faster and more accurate fraud investigations, better compliance with regulations requiring explainable AI, and improved investigator confidence.",
-            },
-            details_fr: {
-              goal: "Fournir des explications claires et lisibles par l'homme sur les raisons pour lesquelles une réclamation a été signalée comme potentiellement frauduleuse par un système d'IA.",
-              problem:
-                "Le manque de transparence des modèles de détection de fraude par IA rend difficile pour les enquêteurs humains de comprendre le raisonnement et de prendre les mesures appropriées.",
-              impact:
-                "Augmente la confiance dans les systèmes d'IA, améliore l'efficacité des enquêtes sur la fraude et garantit une prise de décision équitable.",
-              benefit:
-                "Pour les Compagnies d'Assurance: Enquêtes sur la fraude plus rapides et plus précises, meilleure conformité aux réglementations exigeant une IA explicable et confiance accrue des enquêteurs.",
-            },
-          },
-          {
-            id: 30,
-            category: "service",
-            title_en: "Personalized Content Curation for Media Companies",
-            title_fr:
-              "Curation de Contenu Personnalisée pour les Entreprises Médiatiques",
-            details_en: {
-              goal: "To develop AI-driven systems that curate and recommend personalized news, articles, or entertainment content to individual users.",
-              problem:
-                "Information overload for consumers; difficulty for media companies to retain audience attention and increase engagement.",
-              impact:
-                "Boosts user engagement, increases content consumption, and creates a more loyal audience base.",
-              benefit:
-                "For Media Companies: Higher user retention, increased ad revenue (for ad-supported models), and a stronger competitive position in the digital media landscape.",
-            },
-            details_fr: {
-              goal: "Développer des systèmes basés sur l'IA qui sélectionnent et recommandent des actualités, des articles ou du contenu de divertissement personnalisés aux utilisateurs individuels.",
-              problem:
-                "Surcharge d'informations pour les consommateurs; difficulté pour les entreprises médiatiques à retenir l'attention du public et à accroître l'engagement.",
-              impact:
-                "Stimule l'engagement des utilisateurs, augmente la consommation de contenu et crée une base d'audience plus fidèle.",
-              benefit:
-                "Pour les Entreprises Médiatiques: Rétention d'utilisateurs plus élevée, augmentation des revenus publicitaires (pour les modèles financés par la publicité) et une position concurrentielle plus forte dans le paysage des médias numériques.",
-            },
-          },
-          {
-            id: 31,
-            category: "service",
-            title_en: "Crisis Communication Monitoring & Response",
-            title_fr: "Surveillance et Réponse aux Communications de Crise",
-            details_en: {
-              goal: "To monitor real-time social media and news for emerging crises, analyze public sentiment, and assist in drafting rapid, appropriate responses.",
-              problem:
-                "Slow detection of public relations crises; reactive and uncoordinated communication efforts that can exacerbate negative perceptions.",
-              impact:
-                "Enables swift, informed crisis management, protects brand reputation, and minimizes negative public impact.",
-              benefit:
-                "For Businesses/Public Relations Firms: Faster crisis identification, more effective communication strategies, and reduced long-term reputational damage.",
-            },
-            details_fr: {
-              goal: "Surveiller en temps réel les médias sociaux et les actualités pour les crises émergentes, analyser le sentiment public et aider à la rédaction de réponses rapides et appropriées.",
-              problem:
-                "Détection lente des crises de relations publiques; efforts de communication réactifs et non coordonnés qui peuvent exacerber les perceptions négatives.",
-              impact:
-                "Permet une gestion de crise rapide et éclairée, protège la réputation de la marque et minimise l'impact public négatif.",
-              benefit:
-                "Pour les Entreprises/Cabinets de Relations Publiques: Identification plus rapide des crises, stratégies de communication plus efficaces et réduction des dommages à long terme à la réputation.",
-            },
-          },
-          {
-            id: 32,
-            category: "service",
-            title_en: "Supply Chain Risk Explanation System",
-            title_fr:
-              "Système d'Explication des Risques de la Chaîne d'Approvisionnement",
-            details_en: {
-              goal: "To provide clear explanations for identified risks within a supply chain, detailing their potential impact and recommended mitigation strategies.",
-              problem:
-                "Complex and opaque supply chains make it difficult to understand the root causes and cascading effects of disruptions; lack of actionable insights for risk mitigation.",
-              impact:
-                "Improves supply chain resilience, enables proactive risk management, and enhances strategic planning.",
-              benefit:
-                "For Logistics/Manufacturing Companies: Better understanding of supply chain vulnerabilities, reduced disruption costs, and more robust operational planning.",
-            },
-            details_fr: {
-              goal: "Fournir des explications claires pour les risques identifiés au sein d'une chaîne d'approvisionnement, détaillant leur impact potentiel et les stratégies d'atténuation recommandées.",
-              problem:
-                "Les chaînes d'approvisionnement complexes et opaques rendent difficile la compréhension des causes profondes et des effets en cascade des perturbations; manque d'informations exploitables pour l'atténuation des risques.",
-              impact:
-                "Améliore la résilience de la chaîne d'approvisionnement, permet une gestion proactive des risques et améliore la planification stratégique.",
-              benefit:
-                "Pour les Entreprises de Logistique/Fabrication: Meilleure compréhension des vulnérabilités de la chaîne d'approvisionnement, réduction des coûts de perturbation et planification opérationnelle plus robuste.",
-            },
-          },
+            { id: 1, category: 'school', title_en: 'Intelligent Student Performance & Engagement Platform', title_fr: 'Plateforme Intelligente de Performance et d\'Engagement des Élèves', details_en: { goal: 'To predict student academic performance, identify at-risk students early, and provide personalized learning recommendations.', problem: 'High dropout rates, inconsistent academic performance, and difficulty in providing individualized attention.', impact: 'Creates a proactive educational environment, reduces student failure, and fosters a more engaged learning community.', benefit: 'For Schools: Improved student retention, higher graduation rates, enhanced reputation. For Students: Personalized learning paths, timely academic support.' }, details_fr: { goal: 'Prédire la performance académique des élèves, identifier les élèves à risque tôt et fournir des recommandations d\'apprentissage personnalisées.', problem: 'Taux d\'abandon élevés, performance académique incohérente et difficulté à fournir une attention individualisée.', impact: 'Crée un environnement éducatif proactif, réduit l\'échec scolaire et favorise une communauté d\'apprentissage plus engagée.', benefit: 'Pour les Écoles: Amélioration de la rétention, taux de diplomation plus élevés, réputation améliorée. Pour les Élèves: Parcours d\'apprentissage personnalisés, soutien opportun.' } },
+            { id: 2, category: 'school', title_en: 'Automated Exam Grading & Feedback System', title_fr: 'Système Automatisé de Correction d\'Examens et de Rétroaction', details_en: { goal: 'To automate the grading of certain types of exams and provide instant, constructive feedback.', problem: 'Manual grading is time-consuming, delays feedback, and has potential for human bias.', impact: 'Frees up teacher time, accelerates the learning cycle, and ensures consistent grading standards.', benefit: 'For Schools: Increased teacher efficiency, enhanced data collection. For Students: Immediate feedback for self-correction, reduced anxiety.' }, details_fr: { goal: 'Automatiser la correction de certains types d\'examens et fournir une rétroaction instantanée.', problem: 'La correction manuelle est chronophage, retarde la rétroaction et présente un risque de biais humain.', impact: 'Libère le temps des enseignants, accélère le cycle d\'apprentissage et assure des normes de correction cohérentes.', benefit: 'Pour les Écoles: Efficacité accrue des enseignants, meilleure collecte de données. Pour les Élèves: Rétroaction immédiate pour l\'auto-correction, anxiété réduite.' } },
+            { id: 3, category: 'school', title_en: 'AI-Powered Student Attendance & Behavior Monitoring', title_fr: 'Surveillance de la Présence et du Comportement des Élèves par IA', details_en: { goal: 'To automate attendance tracking using facial recognition and identify unusual behavioral patterns.', problem: 'Manual attendance is inefficient and prone to errors; difficulty in monitoring student engagement.', impact: 'Improves accuracy of attendance records, provides early alerts for student welfare issues.', benefit: 'For Schools: Streamlined processes, enhanced safety. For Parents: Assurance of child\'s presence.' }, details_fr: { goal: 'Automatiser le suivi de la présence par reconnaissance faciale et identifier les comportements inhabituels.', problem: 'La prise de présence manuelle est inefficace et sujette aux erreurs; difficulté de suivi de l\'engagement.', impact: 'Améliore la précision des registres de présence, fournit des alertes précoces pour le bien-être des élèves.', benefit: 'Pour les Écoles: Processus rationalisés, sécurité renforcée. Pour les Parents: Assurance de la présence de l\'enfant.' } },
+            { id: 4, category: 'school', title_en: 'Personalized Tutoring & Resource Matching System', title_fr: 'Système de Jumelage Personnalisé pour le Tutorat et les Ressources', details_en: { goal: 'To connect students with suitable tutors and learning resources based on their specific needs.', problem: 'Students struggle to find effective tutoring; schools lack efficient matching mechanisms.', impact: 'Optimizes learning support, improves academic performance, and makes resource discovery efficient.', benefit: 'For Schools: Enhanced support ecosystem, improved success rates. For Students: Access to tailored help, faster progress.' }, details_fr: { goal: 'Connecter les élèves avec des tuteurs et des ressources adaptés à leurs besoins spécifiques.', problem: 'Les élèves peinent à trouver un tutorat efficace; les écoles manquent de mécanismes de jumelage efficaces.', impact: 'Optimise le soutien à l\'apprentissage, améliore les performances et rend la découverte des ressources efficace.', benefit: 'Pour les Écoles: Écosystème de soutien amélioré, meilleurs taux de réussite. Pour les Élèves: Accès à une aide personnalisée, progrès plus rapides.' } },
+            { id: 5, category: 'health', title_en: 'AI-Powered Medical Image Analysis & Diagnostic Support', title_fr: 'Analyse d\'Images Médicales et Aide au Diagnostic par IA', details_en: { goal: 'To assist medical professionals with faster and more accurate diagnosis from medical images (e.g., X-rays).', problem: 'Shortage of specialized radiologists, delays in diagnosis, and potential for human error.', impact: 'Accelerates diagnostic processes, improves accuracy, and democratizes access to medical expertise.', benefit: 'For Hospitals: Reduced diagnostic time, increased patient throughput. For Patients: Earlier and more accurate diagnoses.' }, details_fr: { goal: 'Aider les professionnels de santé à un diagnostic plus rapide et précis à partir d\'images médicales (ex: rayons X).', problem: 'Pénurie de radiologues spécialisés, retards de diagnostic et risque d\'erreur humaine.', impact: 'Accélère les diagnostics, améliore la précision et démocratise l\'accès à l\'expertise médicale.', benefit: 'Pour les Hôpitaux: Temps de diagnostic réduit, débit de patients accru. Pour les Patients: Diagnostics plus précoces et plus précis.' } },
+            { id: 6, category: 'health', title_en: 'Drug Supply Chain Optimization & Inventory Management', title_fr: 'Optimisation de la Chaîne d\'Approvisionnement en Médicaments et Gestion des Stocks', details_en: { goal: 'To optimize the distribution and inventory of essential medicines, reducing stockouts and waste.', problem: 'Inefficient supply chains lead to drug shortages and expiration of medicines.', impact: 'Ensures consistent availability of life-saving drugs and reduces financial losses.', benefit: 'For Health Facilities: Reliable access to medications, reduced costs. For Patients: Assurance of receiving prescribed medications.' }, details_fr: { goal: 'Optimiser la distribution et l\'inventaire des médicaments essentiels, réduisant les ruptures de stock et le gaspillage.', problem: 'Des chaînes d\'approvisionnement inefficaces entraînent des pénuries de médicaments et leur péremption.', impact: 'Assure la disponibilité des médicaments vitaux et réduit les pertes financières.', benefit: 'Pour les Établissements de Santé: Accès fiable aux médicaments, coûts réduits. Pour les Patients: Assurance de recevoir les médicaments prescrits.' } },
+            { id: 7, category: 'health', title_en: 'Telemedicine Platform with AI Symptom Checker', title_fr: 'Plateforme de Télémédecine avec Vérificateur de Symptômes par IA', details_en: { goal: 'To provide remote medical consultations and initial symptom assessment, especially in rural areas.', problem: 'Limited access to healthcare facilities and long wait times for non-emergency consultations.', impact: 'Expands healthcare reach, reduces burden on physical clinics, and provides preliminary guidance.', benefit: 'For Providers: Increased patient reach, optimized time. For Patients: Convenient access to medical advice, reduced travel costs.' }, details_fr: { goal: 'Fournir des consultations à distance et une évaluation initiale des symptômes, surtout en zone rurale.', problem: 'Accès limité aux établissements de santé et longs temps d\'attente pour les consultations non urgentes.', impact: 'Élargit la portée des soins, réduit la charge des cliniques et fournit des conseils préliminaires.', benefit: 'Pour les Fournisseurs: Portée patient accrue, temps optimisé. Pour les Patients: Accès pratique aux conseils, coûts de déplacement réduits.' } },
+            { id: 8, category: 'health', title_en: 'Medical Record Digitization & Information Retrieval', title_fr: 'Numérisation des Dossiers Médicaux et Recherche d\'Informations', details_en: { goal: 'To digitize paper-based medical records and create an efficient retrieval system.', problem: 'Inefficient paper-based records, difficulty accessing patient history, and risk of data loss.', impact: 'Improves data accessibility, enhances continuity of care, and supports medical research.', benefit: 'For Hospitals: Faster access to data, reduced administrative burden. For Patients: More accurate diagnoses and treatments.' }, details_fr: { goal: 'Numériser les dossiers médicaux papier et créer un système de recherche efficace.', problem: 'Dossiers papier inefficaces, difficulté d\'accès à l\'historique du patient et risque de perte de données.', impact: 'Améliore l\'accessibilité des données, la continuity des soins et soutient la recherche médicale.', benefit: 'Pour les Hôpitaux: Accès plus rapide aux données, charge administrative réduite. Pour les Patients: Diagnostics et traitements plus précis.' } },
+            { id: 9, category: 'education', title_en: 'E-learning Recommendation & Plagiarism Detection', title_fr: 'Recommandation E-learning & Détection de Plagiat', details_en: { goal: 'To provide tailored educational content and ensure academic integrity by detecting plagiarism.', problem: 'Generic learning paths leading to disengagement; challenge of maintaining academic honesty.', impact: 'Enhances personalization of online education and upholds academic standards.', benefit: 'For Institutions: Improved learner satisfaction, protection of reputation. For Learners: More engaging experiences, ethical practices.' }, details_fr: { goal: 'Fournir un contenu éducatif sur mesure et garantir l\'intégrité académique en détectant le plagiat.', problem: 'Parcours d\'apprentissage génériques menant au désengagement; défi de maintenir l\'honnêteté académique.', impact: 'Améliore la personnalisation de l\'éducation en ligne et maintient les normes académiques.', benefit: 'Pour les Institutions: Satisfaction des apprenants améliorée, protection de la réputation. Pour les Apprenants: Expériences plus engageantes, pratiques éthiques.' } },
+            { id: 10, category: 'education', title_en: 'Job Skill Gap Analysis & Course Recommendation', title_fr: 'Analyse des Lacunes en Compétences et Recommandation de Cours', details_en: { goal: 'To analyze job market demands, identify skills gaps, and recommend relevant training.', problem: 'Disconnect between educational output and industry needs; difficulty finding relevant training.', impact: 'Fosters a more skilled and employable workforce and supports economic growth.', benefit: 'For Institutions: Ability to offer in-demand courses. For Individuals: Clear skill development pathways, improved employability.' }, details_fr: { goal: 'Analyser les demandes du marché du travail, identifier les lacunes en compétences et recommander des formations pertinentes.', problem: 'Déconnexion entre l\'offre éducative et les besoins de l\'industrie; difficulté à trouver une formation pertinente.', impact: 'Favorise une main-d\'œuvre plus qualifiée et employable et soutient la croissance économique.', benefit: 'Pour les Institutions: Capacité à offrir des cours en demande. Pour les Individus: Parcours clairs de développement, employabilité améliorée.' } },
+            { id: 11, category: 'education', title_en: 'Language Learning App with AI Pronunciation Feedback', title_fr: 'App d\'Apprentissage des Langues avec Feedback de Prononciation IA', details_en: { goal: 'Develop an interactive mobile app that helps users learn languages with real-time AI pronunciation feedback.', problem: 'Difficulty practicing correct pronunciation without a native speaker; lack of engaging tools.', impact: 'Improves language proficiency and facilitates cross-cultural communication.', benefit: 'For Schools/Individuals: Enhanced learning, accelerated acquisition. For Business: Improved communication with partners.' }, details_fr: { goal: 'Développer une application mobile interactive pour apprendre les langues avec une rétroaction de prononciation IA en temps réel.', problem: 'Difficulté de pratiquer la prononciation sans locuteur natif; manque d\'outils engageants.', impact: 'Améliore la maîtrise des langues et facilite la communication interculturelle.', benefit: 'Pour les Écoles/Individus: Apprentissage amélioré, acquisition accélérée. Pour les Entreprises: Communication améliorée avec les partenaires.' } },
+            { id: 12, category: 'education', title_en: 'Automated Certificate Verification System', title_fr: 'Système Automatisé de Vérification de Certificats', details_en: { goal: 'Create a secure system for verifying educational and professional qualifications to prevent fraud.', problem: 'Widespread issue of fraudulent certificates, undermining trust in education and hiring.', impact: 'Restores integrity to credentials, streamlines verification, and builds trust.', benefit: 'For Employers: Faster, reliable background checks. For Institutions: Protection of reputation and legitimate credentials.' }, details_fr: { goal: 'Créer un système sécurisé pour vérifier les qualifications éducatives et professionnelles afin de prévenir la fraude.', problem: 'Problème répandu de certificats frauduleux, minant la confiance dans l\'éducation et l\'embauche.', impact: 'Restaure l\'intégrité des diplômes, rationalise la vérification et renforce la confiance.', benefit: 'Pour les Employeurs: Vérifications d\'antécédents plus rapides et plus fiables. Pour les Institutions: Protection de la réputation et des diplômes légitimes.' } },
+            { id: 13, category: 'insurance', title_en: 'AI-Driven Fraud Detection & Policy Recommendation', title_fr: 'Détection de Fraude par IA & Recommandation de Polices', details_en: { goal: 'To significantly reduce fraudulent claims and accurately recommend tailored insurance policies.', problem: 'High financial losses due to fraud; inefficient manual claims processing; one-size-fits-all policies.', impact: 'Protects profitability, streamlines operations, and improves customer trust.', benefit: 'For Companies: Reduced fraud losses, faster processing. For Customers: Fairer premiums, quicker claims resolution.' }, details_fr: { goal: 'Réduire significativement les réclamations frauduleuses et recommander des polices d\'assurance sur mesure.', problem: 'Pertes financières élevées dues à la fraude; traitement manuel inefficace; polices uniques.', impact: 'Protège la rentabilité, rationalise les opérations et améliore la confiance des clients.', benefit: 'Pour les Entreprises: Pertes de fraude réduites, traitement plus rapide. Pour les Clients: Primes plus justes, résolution rapide.' } },
+            { id: 14, category: 'insurance', title_en: 'Automated Damage Assessment via Computer Vision', title_fr: 'Évaluation Automatisée des Dommages par Vision par Ordinateur', details_en: { goal: 'Enable rapid and objective assessment of damage using images/videos submitted by policyholders.', problem: 'Slow and costly manual damage assessment processes; potential for inconsistent evaluations.', impact: 'Accelerates claims processing, reduces operational costs, and improves customer satisfaction.', benefit: 'For Companies: Faster claims settlement, lower inspection costs. For Policyholders: Quicker resolution of claims.' }, details_fr: { goal: 'Permettre une évaluation rapide et objective des dommages à l\'aide d\'images/vidéos soumises par les assurés.', problem: 'Processus d\'évaluation manuels lents et coûteux; évaluations potentiellement incohérentes.', impact: 'Accélère le traitement des sinistres, réduit les coûts opérationnels et améliore la satisfaction client.', benefit: 'Pour les Entreprises: Règlement plus rapide des sinistres, coûts d\'inspection réduits. Pour les Assurés: Résolution plus rapide des sinistres.' } },
+            { id: 15, category: 'insurance', title_en: 'Customer Sentiment Analysis for Service Improvement', title_fr: 'Analyse du Sentiment Client pour Améliorer le Service', details_en: { goal: 'Analyze customer feedback from various channels to understand sentiment and improve service.', problem: 'Difficulty processing large volumes of unstructured feedback; reactive customer service.', impact: 'Leads to proactive service improvements, higher customer satisfaction, and stronger brand loyalty.', benefit: 'For Companies: Data-driven insights, reduced churn. For Customers: Feeling heard and experiencing improved service.' }, details_fr: { goal: 'Analyser les retours clients de divers canaux pour comprendre le sentiment et améliorer le service.', problem: 'Difficulté à traiter de grands volumes de retours non structurés; service client réactif.', impact: 'Mène à des améliorations proactives, une plus grande satisfaction client et une fidélité accrue.', benefit: 'Pour les Entreprises: Idées basées sur les données, réduction du taux de désabonnement. Pour les Clients: Se sentir écouté et bénéficier d\'un service amélioré.' } },
+            { id: 16, category: 'insurance', title_en: 'Dynamic Pricing Models for Insurance Policies', title_fr: 'Modèles de Tarification Dynamique pour Polices d\'Assurance', details_en: { goal: 'Develop models that dynamically adjust insurance premiums based on real-time data and risk.', problem: 'Static pricing may not accurately reflect risk or market fluctuations, leading to lost revenue.', impact: 'Optimizes profitability, enhances market competitiveness, and allows for granular risk assessment.', benefit: 'For Companies: Increased revenue, better risk management. For Customers: Potentially fairer premiums.' }, details_fr: { goal: 'Développer des modèles qui ajustent dynamiquement les primes d\'assurance en fonction des données en temps réel et du risque.', problem: 'La tarification statique peut ne pas refléter le risque ou les fluctuations du marché, entraînant une perte de revenus.', impact: 'Optimise la rentabilité, améliore la compétitivité et permet une évaluation granulaire des risques.', benefit: 'Pour les Entreprises: Augmentation des revenus, meilleure gestion des risques. Pour les Clients: Primes potentiellement plus justes.' } },
+            { id: 17, category: 'service', title_en: 'Intelligent Customer Service Chatbot & Predictive Churn', title_fr: 'Chatbot de Service Client Intelligent & Prédiction du Désabonnement', details_en: { goal: 'Provide 24/7 support via an intelligent chatbot and proactively identify customers at risk of churning.', problem: 'High call center volumes, long wait times, inconsistent service quality, and reactive retention efforts.', impact: 'Enhances customer experience, reduces costs, and improves customer loyalty.', benefit: 'For Companies: Lower support costs, reduced churn. For Customers: Instant answers, personalized support.' }, details_fr: { goal: 'Fournir un support 24/7 via un chatbot intelligent et identifier les clients à risque de désabonnement.', problem: 'Volumes élevés de centres d\'appels, longs temps d\'attente, qualité de service incohérente.', impact: 'Améliore l\'expérience client, réduit les coûts et améliore la fidélité.', benefit: 'Pour les Entreprises: Coûts de support réduits, moins de désabonnement. Pour les Clients: Réponses instantanées, support personnalisé.' } },
+            { id: 18, category: 'service', title_en: 'Logistics Route Optimization & Fleet Management', title_fr: 'Optimisation des Itinéraires Logistiques & Gestion de Flotte', details_en: { goal: 'Optimize delivery routes for service vehicles, reduce fuel consumption, and improve delivery times.', problem: 'Inefficient routing leading to higher operational costs, delayed deliveries, and environmental impact.', impact: 'Significant cost savings, improved service reliability, and reduced carbon footprint.', benefit: 'For Companies: Lower fuel costs, increased capacity. For Customers: Faster and predictable delivery times.' }, details_fr: { goal: 'Optimiser les itinéraires de livraison, réduire la consommation de carburant et améliorer les délais.', problem: 'Routage inefficace entraînant des coûts élevés, des retards et un impact environnemental.', impact: 'Économies de coûts, fiabilité du service améliorée et empreinte carbone réduite.', benefit: 'Pour les Entreprises: Coûts de carburant réduits, capacité accrue. Pour les Clients: Délais de livraison plus rapides.' } },
+            { id: 19, category: 'service', title_en: 'Predictive Maintenance for Industrial Equipment', title_fr: 'Maintenance Prédictive pour Équipements Industriels', details_en: { goal: 'Predict potential failures in industrial machinery before they occur to minimize downtime.', problem: 'Unexpected equipment breakdowns leading to production losses, high repair costs, and safety risks.', impact: 'Maximizes operational uptime, extends equipment lifespan, and reduces maintenance costs.', benefit: 'For Companies: Increased productivity, reduced costs, enhanced safety. For Providers: Offer value-added services.' }, details_fr: { goal: 'Prédire les pannes potentielles des machines industrielles pour minimiser les temps d\'arrêt.', problem: 'Pannes inattendues entraînant des pertes de production, des coûts élevés et des risques.', impact: 'Maximise le temps de fonctionnement, prolonge la durée de vie de l\'équipement et réduit les coûts de maintenance.', benefit: 'For Companies: Increased productivity, reduced costs, enhanced safety. For Providers: Offer value-added services.' } },
+            { id: 20, category: 'service', title_en: 'Automated Invoice & Document Processing', title_fr: 'Traitement Automatisé des Factures & Documents', details_en: { goal: 'Automate the extraction of key information from invoices and other business documents.', problem: 'Time-consuming and error-prone manual processing of large volumes of documents.', impact: 'Improves operational efficiency, enhances data accuracy, and accelerates financial workflows.', benefit: 'For All Businesses: Reduced administrative costs, faster reporting. For Employees: Frees up staff from repetitive tasks.' }, details_fr: { goal: 'Automatiser l\'extraction d\'informations clés des factures et autres documents commerciaux.', problem: 'Traitement manuel chronophage et sujet aux erreurs de grands volumes de documents.', impact: 'Améliore l\'efficacité opérationnelle, la précision des données et accélère les flux financiers.', benefit: 'Pour toutes les Entreprises: Coûts administratifs réduits, rapports plus rapides. Pour les Employés: Libère le personnel des tâches répétitives.' } },
+            { id: 21, category: 'service', title_en: 'HR Talent Matching & Skill Development', title_fr: 'Jumelage de Talents RH & Développement des Compétences', details_en: { goal: 'Use AI to match job applicants with suitable roles and identify internal employees\' skill gaps.', problem: 'Inefficient hiring processes; difficulty in identifying and nurturing internal talent.', impact: 'Improves recruitment efficiency, enhances employee retention, and fosters a developing workforce.', benefit: 'For Companies: Reduced time-to-hire, lower costs. For Employees: Clear career development paths.' }, details_fr: { goal: 'Utiliser l\'IA pour jumeler les candidats à des postes et identifier les lacunes en compétences des employés.', problem: 'Processus de recrutement inefficaces; difficulté à identifier et à cultiver les talents internes.', impact: 'Améliore l\'efficacité du recrutement, la rétention des employés et favorise une main-d\'œuvre en développement.', benefit: 'Pour les Entreprises: Temps de recrutement réduit, coûts inférieurs. Pour les Employés: Parcours de carrière clairs.' } },
+            { id: 22, category: 'service', title_en: 'Market Trend Analysis for Consulting Firms', title_fr: 'Analyse des Tendances du Marché pour Cabinets de Conseil', details_en: { goal: 'Provide tools to analyze market data to identify trends, landscapes, and opportunities.', problem: 'Manual market research is time-consuming and may miss subtle trends; difficulty synthesizing data.', impact: 'Enhances the quality and speed of strategic advice, enabling more impactful recommendations.', benefit: 'For Firms: Increased research efficiency, stronger competitive edge. For Clients: More accurate market insights.' }, details_fr: { goal: 'Fournir des outils pour analyser les données de marché afin d\'identifier les tendances, les paysages et les opportunités.', problem: 'La recherche de marché manuelle est longue et peut manquer des tendances; difficulté de synthèse.', impact: 'Améliore la qualité et la vitesse des conseils stratégiques, permettant des recommandations plus percutantes.', benefit: 'Pour les Cabinets: Efficacité de recherche accrue, avantage concurrentiel renforcé. Pour les Clients: Informations de marché plus précises.' } },
+            { id: 23, category: 'service', title_en: 'Social Media Brand Monitoring & Sentiment Analysis', title_fr: 'Surveillance de Marque et Analyse de Sentiment sur les Médias Sociaux', details_en: { goal: 'To monitor social media conversations, understand public sentiment towards a brand or topic, and identify emerging trends.', problem: 'Overwhelming volume of social media data; difficulty in manually tracking brand perception and competitor activity.', impact: 'Enables proactive reputation management, informed marketing strategies, and timely crisis response.', benefit: 'For Businesses: Improved brand image, enhanced customer engagement, competitive intelligence, and reduced risk of negative publicity.' }, details_fr: { goal: 'Surveiller les conversations sur les médias sociaux, comprendre le sentiment public envers une marque ou un sujet, et identifier les tendances émergentes.', problem: 'Volume écrasant de données des médias sociaux; difficulté à suivre manuellement la perception de la marque et l\'activité des concurrents.', impact: 'Permet une gestion proactive de la réputation, des stratégies marketing éclairées et une réponse rapide aux crises.', benefit: 'Pour les Entreprises: Amélioration de l\'image de marque, engagement client accru, veille concurrentielle et réduction des risques de publicité négative.' } },
+            { id: 24, category: 'service', title_en: 'Automated News & Document Summarization', title_fr: 'Synthèse Automatisée d\'Actualités et de Documents', details_en: { goal: 'To automatically generate concise summaries of large volumes of news articles, reports, or internal documents.', problem: 'Information overload; time-consuming manual summarization for decision-makers and analysts.', impact: 'Accelerates information consumption, improves decision-making speed, and enhances knowledge management.', benefit: 'For Businesses: Increased efficiency in information processing, better strategic insights, and improved productivity for research teams.' }, details_fr: { goal: 'Générer automatiquement des résumés concis de grands volumes d\'articles de presse, de rapports ou de documents internes.', problem: 'Surcharge d\'informations; synthèse manuelle chronophage pour les décideurs et les analystes.', impact: 'Accélère la consommation d\'informations, améliore la vitesse de prise de décision et optimise la gestion des connaissances.', benefit: 'Pour les Entreprises: Efficacité accrue dans le traitement de l\'information, meilleures informations stratégiques et productivité améliorée pour les équipes de recherche.' } },
+            { id: 25, category: 'service', title_en: 'Legal Document NER & Information Extraction', title_fr: 'Extraction d\'Informations et NER de Documents Légaux', details_en: { goal: 'To automatically identify and extract key entities (e.g., names, dates, clauses, case numbers) from legal documents.', problem: 'Manual review of legal documents is slow, prone to human error, and costly; difficulty in finding specific information quickly.', impact: 'Streamlines legal research, contract review, and compliance processes, reducing operational costs and risks.', benefit: 'For Legal Firms/Departments: Faster document processing, improved accuracy in data extraction, and enhanced compliance with legal requirements.' }, details_fr: { goal: 'Identifier et extraire automatiquement les entités clés (ex: noms, dates, clauses, numéros de dossier) des documents juridiques.', problem: 'L\'examen manuel des documents juridiques est lent, sujet aux erreurs humaines et coûteux; difficulté à trouver rapidement des informations spécifiques.', impact: 'Rationalise la recherche juridique, l\'examen des contrats et les processus de conformité, réduisant les coûts opérationnels et les risques.', benefit: 'Pour les Cabinets/Départements Juridiques: Traitement plus rapide des documents, précision améliorée dans l\'extraction des données et conformité accrue aux exigences légales.' } },
+            { id: 26, category: 'service', title_en: 'AI-Powered Explanations for Complex Regulations', title_fr: 'Explications par IA pour Réglementations Complexes', details_en: { goal: 'To provide clear, concise, and understandable explanations of complex legal or regulatory texts using AI.', problem: 'Difficulty for businesses and citizens to comprehend intricate legal jargon and regulatory requirements, leading to non-compliance or confusion.', impact: 'Increases regulatory compliance, reduces legal risks, and empowers users with clear information.', benefit: 'For Businesses/Public Sector: Improved understanding of compliance obligations, reduced legal fees, and better public engagement with regulations.' }, details_fr: { goal: 'Fournir des explications claires, concises et compréhensibles de textes légaux ou réglementaires complexes à l\'aide de l\'IA.', problem: 'Difficulté pour les entreprises et les citoyens à comprendre le jargon juridique complexe et les exigences réglementaires, entraînant une non-conformité ou une confusion.', impact: 'Augmente la conformité réglementaire, réduit les risques juridiques et donne aux utilisateurs des informations claires.', benefit: 'Pour les Entreprises/Secteur Public: Meilleure compréhension des obligations de conformité, réduction des frais juridiques et meilleur engagement du public avec les réglementations.' } },
+            { id: 27, category: 'service', title_en: 'Customer Review Analysis for Product Improvement', title_fr: 'Analyse des Avis Clients pour l\'Amélioration des Produits', details_en: { goal: 'To analyze customer reviews and feedback to identify common themes, sentiment, and actionable insights for product or service improvement.', problem: 'Vast amounts of unstructured customer feedback; difficulty in manually identifying key pain points or popular features.', impact: 'Drives data-driven product development, enhances customer satisfaction, and fosters innovation based on real user needs.', benefit: 'For Retail/Product Companies: Faster identification of product flaws, understanding of customer preferences, and more effective product roadmaps.' }, details_fr: { goal: 'Analyser les avis et commentaires des clients pour identifier les thèmes communs, le sentiment et les informations exploitables pour l\'amélioration des produits ou services.', problem: 'Grandes quantités de commentaires clients non structurés; difficulté à identifier manuellement les points faibles clés ou les fonctionnalités populaires.', impact: 'Impulse le développement de produits basé sur les données, améliore la satisfaction client et favorise l\'innovation basée sur les besoins réels des utilisateurs.', benefit: 'Pour les Entreprises de Vente au Détail/Produits: Identification plus rapide des défauts de produits, compréhension des préférences des clients et feuilles de route de produits plus efficaces.' } },
+            { id: 28, category: 'service', title_en: 'Patent & Research Paper Information Retrieval', title_fr: 'Recherche d\'Informations sur les Brevets et Articles de Recherche', details_en: { goal: 'To build an intelligent search and retrieval system for vast databases of patents, scientific papers, or technical reports.', problem: 'Difficulty for R&D teams and innovators to efficiently find relevant prior art or research, leading to duplicated efforts or missed opportunities.', impact: 'Accelerates innovation, improves research efficiency, and ensures comprehensive intellectual property analysis.', benefit: 'For R&D Departments/Universities/Startups: Faster access to critical knowledge, reduced research cycles, and stronger patent applications.' }, details_fr: { goal: 'Construire un système intelligent de recherche et de récupération d\'informations pour de vastes bases de données de brevets, d\'articles scientifiques ou de rapports techniques.', problem: 'Difficulté pour les équipes de R&D et les innovateurs à trouver efficacement l\'art antérieur ou la recherche pertinente, entraînant des efforts dupliqués ou des opportunités manquées.', impact: 'Accélère l\'innovation, améliore l\'efficacité de la recherche et assure une analyse complète de la propriété intellectuelle.', benefit: 'For R&D Departments/Universities/Startups: Accès plus rapide aux connaissances critiques, cycles de research réduits et demandes de brevets plus solides.' } },
+            { id: 29, category: 'insurance', title_en: 'AI-Powered Fraud Explanation System', title_fr: 'Système d\'Explication de Fraude par IA', details_en: { goal: 'To provide clear, human-readable explanations for why a claim has been flagged as potentially fraudulent by an AI system.', problem: 'Lack of transparency in AI fraud detection models makes it difficult for human investigators to understand the reasoning and take appropriate action.', impact: 'Increases trust in AI systems, improves the efficiency of fraud investigations, and ensures fair decision-making.', benefit: 'For Insurance Companies: Faster and more accurate fraud investigations, better compliance with regulations requiring explainable AI, and improved investigator confidence.' }, details_fr: { goal: 'Fournir des explications claires et lisibles par l\'homme sur les raisons pour lesquelles une réclamation a été signalée comme potentiellement frauduleuse par un système d\'IA.', problem: 'Le manque de transparence des modèles de détection de fraude par IA rend difficile pour les enquêteurs humains de comprendre le raisonnement et de prendre les mesures appropriées.', impact: 'Augmente la confiance dans les systèmes d\'IA, améliore l\'efficacité des enquêtes sur la fraude et garantit une prise de décision équitable.', benefit: 'Pour les Compagnies d\'Assurance: Enquêtes sur la fraude plus rapides et plus précises, meilleure conformité aux réglementations exigeant une IA explicable et confiance accrue des enquêteurs.' } },
+            { id: 30, category: 'service', title_en: 'Personalized Content Curation for Media Companies', title_fr: 'Curation de Contenu Personnalisée pour les Entreprises Médiatiques', details_en: { goal: 'To develop AI-driven systems that curate and recommend personalized news, articles, or entertainment content to individual users.', problem: 'Information overload for consumers; difficulty for media companies to retain audience attention and increase engagement.', impact: 'Boosts user engagement, increases content consumption, and creates a more loyal audience base.', benefit: 'For Media Companies: Higher user retention, increased ad revenue (for ad-supported models), and a stronger competitive position in the digital media landscape.' }, details_fr: { goal: 'Développer des systèmes basés sur l\'IA qui sélectionnent et recommandent des actualités, des articles ou du contenu de divertissement personnalisés aux utilisateurs individuels.', problem: 'Surcharge d\'informations pour les consommateurs; difficulté pour les entreprises médiatiques à retenir l\'attention du public et à accroître l\'engagement.', impact: 'Stimule l\'engagement des utilisateurs, augmente la consommation de contenu et crée une base d\'audience plus fidèle.', benefit: 'Pour les Entreprises Médiatiques: Rétention d\'utilisateurs plus élevée, augmentation des revenus publicitaires (pour les modèles financés par la publicité) et une position concurrentielle plus forte dans le paysage des médias numériques.' } },
+            { id: 31, category: 'service', title_en: 'Crisis Communication Monitoring & Response', title_fr: 'Surveillance et Réponse aux Communications de Crise', details_en: { goal: 'To monitor real-time social media and news for emerging crises, analyze public sentiment, and assist in drafting rapid, appropriate responses.', problem: 'Slow detection of public relations crises; reactive and uncoordinated communication efforts that can exacerbate negative perceptions.', impact: 'Enables swift, informed crisis management, protects brand reputation, and minimizes negative public impact.', benefit: 'For Businesses/Public Relations Firms: Faster crisis identification, more effective communication strategies, and reduced long-term reputational damage.' }, details_fr: { goal: 'Surveiller en temps réel les médias sociaux et les actualités pour les crises émergentes, analyser le sentiment public et aider à la rédaction de réponses rapides et appropriées.', problem: 'Détection lente des crises de relations publiques; efforts de communication réactifs et non coordonnés qui peuvent exacerber les perceptions négatives.', impact: 'Permet une gestion de crise rapide et éclairée, protège la réputation de la marque et minimise l\'impact public négatif.', benefit: 'For Businesses/Public Relations Firms: Identification plus rapide des crises, stratégies de communication plus efficaces et réduction des dommages à long terme à la réputation.' } },
+            { id: 32, category: 'service', title_en: 'Supply Chain Risk Explanation System', title_fr: 'Système d\'Explication des Risques de la Chaîne d\'Approvisionnement', details_en: { goal: 'To provide clear explanations for identified risks within a supply chain, detailing their potential impact and recommended mitigation strategies.', problem: 'Complex and opaque supply chains make it difficult to understand the root causes and cascading effects of disruptions; lack of actionable insights for risk mitigation.', impact: 'Improves supply chain resilience, enables proactive risk management, and enhances strategic planning.', benefit: 'For Logistics/Manufacturing Companies: Better understanding of supply chain vulnerabilities, reduced disruption costs, and more robust operational planning.' }, details_fr: { goal: 'Fournir des explications claires pour les risques identifiés au sein d\'une chaîne d\'approvisionnement, détaillant leur impact potentiel et les stratégies d\'atténuation recommandées.', problem: 'Les chaînes d\'approvisionnement complexes et opaques rendent difficile la compréhension des causes profondes et des effets en cascade des perturbations; manque d\'informations exploitables pour l\'atténuation des risques.', impact: 'Améliore la résilience de la chaîne d\'approvisionnement, permet une gestion proactive des risques et améliore la planification stratégique.', benefit: 'Pour les Entreprises de Logistique/Fabrication: Meilleure compréhension des vulnérabilités de la chaîne d\'approvisionnement, réduction des coûts de perturbation et planification opérationnelle plus robuste.' } },
         ];
-        const accordionContainer = document.getElementById(
-          "accordion-container"
-        );
-        const filters = document.getElementById("project-filters");
+        const accordionContainer = document.getElementById('accordion-container');
+        const filters = document.getElementById('project-filters');
+        const generateIdeaBtn = document.getElementById('generate-idea-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const generatedIdeaContainer = document.getElementById('generated-idea-container');
 
-        function createProjectElement(project) {
-          const projectElement = document.createElement("div");
-          projectElement.className =
-            "project-card border border-slate-200 rounded-lg overflow-hidden";
-          projectElement.dataset.category = project.category;
-
-          const titleButton = document.createElement("button");
-          titleButton.className =
-            "accordion-title w-full p-4 text-left bg-yellow-100/50 hover:bg-yellow-100 transition-colors duration-300 flex justify-between items-center";
-
-          const titleText = document.createElement("h4");
-          titleText.className = "font-bold text-yellow-900";
-          titleText.innerHTML = `<span class="lang-en">${project.title_en}</span><span class="lang-fr">${project.title_fr}</span>`;
-
-          const icon = document.createElement("span");
-          icon.className = "transform transition-transform duration-300";
-          icon.innerHTML = "&#9662;"; // Down arrow
-
-          titleButton.appendChild(titleText);
-          titleButton.appendChild(icon);
-
-          const contentDiv = document.createElement("div");
-          contentDiv.className = "accordion-content bg-white p-4 md:p-6";
-
-          const contentInnerHtml = (details) => `
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div><h5 class="font-semibold text-slate-700">GOAL</h5><p class="text-sm text-slate-600">${details.goal}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">PROBLEM SOLVED</h5><p class="text-sm text-slate-600">${details.problem}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">IMPACT</h5><p class="text-sm text-slate-600">${details.impact}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">BENEFIT</h5><p class="text-sm text-slate-600">${details.benefit}</p></div>
-                </div>
-            `;
-          const contentInnerHtmlFr = (details) => `
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div><h5 class="font-semibold text-slate-700">OBJECTIF</h5><p class="text-sm text-slate-600">${details.goal}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">PROBLÈME RÉSOLU</h5><p class="text-sm text-slate-600">${details.problem}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">IMPACT</h5><p class="text-sm text-slate-600">${details.impact}</p></div>
-                    <div><h5 class="font-semibold text-slate-700">AVANTAGE</h5><p class="text-sm text-slate-600">${details.benefit}</p></div>
-                </div>
-            `;
-
-          contentDiv.innerHTML = `
-                <div class="lang-en">${contentInnerHtml(
-                  project.details_en
-                )}</div>
-                <div class="lang-fr">${contentInnerHtmlFr(
-                  project.details_fr
-                )}</div>
-            `;
-
-          projectElement.appendChild(titleButton);
-          projectElement.appendChild(contentDiv);
-
-          titleButton.addEventListener("click", () => {
-            const isActive = projectElement.classList.contains("active");
-            document.querySelectorAll(".project-card").forEach((p) => {
-              p.classList.remove("active");
-              p.querySelector(".accordion-content").style.maxHeight = "0px";
-              p.querySelector(
-                ".accordion-title span:last-child"
-              ).style.transform = "rotate(0deg)";
-            });
-            if (!isActive) {
-              projectElement.classList.add("active");
-              contentDiv.style.maxHeight = contentDiv.scrollHeight + "px";
-              icon.style.transform = "rotate(180deg)";
+        function createProjectElement(project, isGenerated = false) {
+            const projectElement = document.createElement('div');
+            projectElement.className = `project-card glass-container overflow-hidden`; /* Use glass-container */
+            if (isGenerated) {
+                projectElement.classList.add('bg-green-50'); /* Specific styling for generated cards */
             }
-          });
+            projectElement.dataset.category = project.category;
 
-          return projectElement;
+            const titleButton = document.createElement('button');
+            titleButton.className = 'accordion-title w-full p-4 text-left flex justify-between items-center';
+            if (isGenerated) {
+                titleButton.classList.add('!bg-green-100/50', '!hover:bg-green-100');
+            } else {
+                titleButton.classList.add('bg-yellow-100/50', 'hover:bg-yellow-100'); /* Existing styling */
+            }
+            
+            const titleText = document.createElement('h4');
+            titleText.className = 'font-bold text-yellow-900';
+            titleText.innerHTML = `<span class="lang-en">${project.title_en}</span><span class="lang-fr">${project.title_fr}</span>`;
+
+            const icon = document.createElement('span');
+            icon.className = 'transform transition-transform duration-300 text-yellow-900'; /* Icon color */
+            icon.innerHTML = '&#9662;'; // Down arrow
+
+            titleButton.appendChild(titleText);
+            titleButton.appendChild(icon);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'accordion-content p-4 md:p-6'; /* No bg-white */
+            
+            const contentInnerHtml = (details) => `
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div><h5 class="font-semibold text-yellow-800">GOAL</h5><p class="text-sm text-slate-600">${details.goal}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">PROBLEM SOLVED</h5><p class="text-sm text-slate-600">${details.problem}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">IMPACT</h5><p class="text-sm text-slate-600">${details.impact}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">BENEFIT</h5><p class="text-sm text-slate-600">${details.benefit}</p></div>
+                </div>
+            `;
+             const contentInnerHtmlFr = (details) => `
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div><h5 class="font-semibold text-yellow-800">OBJECTIF</h5><p class="text-sm text-slate-600">${details.goal}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">PROBLÈME RÉSOLU</h5><p class="text-sm text-slate-600">${details.problem}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">IMPACT</h5><p class="text-sm text-slate-600">${details.impact}</p></div>
+                    <div><h5 class="font-semibold text-yellow-800">AVANTAGE</h5><p class="text-sm text-slate-600">${details.benefit}</p></div>
+                </div>
+            `;
+            
+            contentDiv.innerHTML = `
+                <div class="lang-en">${contentInnerHtml(project.details_en)}</div>
+                <div class="lang-fr">${contentInnerHtmlFr(project.details_fr)}</div>
+            `;
+            
+            projectElement.appendChild(titleButton);
+            projectElement.appendChild(contentDiv);
+            
+            titleButton.addEventListener('click', () => {
+                const isActive = projectElement.classList.contains('active');
+                document.querySelectorAll('.project-card').forEach(p => {
+                    p.classList.remove('active');
+                    p.querySelector('.accordion-content').style.maxHeight = '0px';
+                    p.querySelector('.accordion-title span:last-child').style.transform = 'rotate(0deg)';
+                });
+                if (!isActive) {
+                    projectElement.classList.add('active');
+                    contentDiv.style.maxHeight = contentDiv.scrollHeight + 'px';
+                    icon.style.transform = 'rotate(180deg)';
+                }
+            });
+
+            return projectElement;
         }
 
-        function renderProjects(filter = "all") {
-          accordionContainer.innerHTML = "";
-          const filteredProjects =
-            filter === "all"
-              ? projectsData
-              : projectsData.filter((p) => p.category === filter);
-          filteredProjects.forEach((project) => {
-            accordionContainer.appendChild(createProjectElement(project));
-          });
+        function renderProjects(filter = 'all') {
+            accordionContainer.innerHTML = '';
+            const filteredProjects = (filter === 'all') ? projectsData : projectsData.filter(p => p.category === filter);
+            filteredProjects.forEach(project => {
+                accordionContainer.appendChild(createProjectElement(project));
+            });
         }
-
-        filters.addEventListener("click", (e) => {
-          if (e.target.tagName === "BUTTON") {
-            document
-              .querySelectorAll("#project-filters .nav-button")
-              .forEach((btn) => btn.classList.remove("active"));
-            e.target.classList.add("active");
-            renderProjects(e.target.dataset.filter);
-          }
+        
+        filters.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('#project-filters .nav-button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                renderProjects(e.target.dataset.filter);
+            }
         });
 
-        const langToggle = document.getElementById("language-toggle");
-        const langToggleDot = document.querySelector(".lang-toggle-dot");
-        langToggle.addEventListener("change", () => {
-          langToggleDot.style.transform = langToggle.checked
-            ? "translateX(1.25rem)"
-            : "translateX(0)";
+        const langToggle = document.getElementById('language-toggle');
+        const langToggleDot = document.querySelector('.lang-toggle-dot');
+        langToggle.addEventListener('change', () => {
+            langToggleDot.style.transform = langToggle.checked ? 'translateX(1.25rem)' : 'translateX(0)';
         });
 
-        const gdpChartCanvas = document.getElementById("gdpChart");
+        const gdpChartCanvas = document.getElementById('gdpChart');
         if (gdpChartCanvas) {
-          new Chart(gdpChartCanvas, {
-            type: "doughnut",
-            data: {
-              labels: ["Services", "Industry / Industrie", "Agriculture"],
-              datasets: [
-                {
-                  data: [51, 28, 21],
-                  backgroundColor: ["#a16207", "#d97706", "#ca8a04"],
-                  borderColor: "#FEFCE8",
-                  borderWidth: 2,
+            new Chart(gdpChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Services', 'Industry / Industrie', 'Agriculture'],
+                    datasets: [{
+                        data: [51, 28, 21],
+                        backgroundColor: ['#EE63B6', '#6CBF4F', '#F0E6F7'], /* Pink, Green, Light Purple */
+                        borderColor: '#FFFFFF', /* White border for contrast */
+                        borderWidth: 2
+                    }]
                 },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { position: "bottom", labels: { color: "#334155" } },
-              },
-            },
-          });
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                color: '#333333', /* Dark text for legend */
+                                font: { family: 'Inter', size: 14 }
+                            } 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
+        generateIdeaBtn.addEventListener('click', async () => {
+            loadingIndicator.classList.remove('hidden');
+            generatedIdeaContainer.innerHTML = ''; // Clear previous ideas
+
+            const activeFilterButton = document.querySelector('#project-filters .nav-button.active');
+            const currentCategory = activeFilterButton ? activeFilterButton.dataset.filter : 'all';
+            const categoryPrompt = currentCategory === 'all' ? 'any business sector' : `${currentCategory} sector`;
+
+            let chatHistory = [];
+            const prompt = `Generate a practical project idea for a ${categoryPrompt} business in Cameroon. The output should be a JSON object with 'title_en', 'title_fr', 'goal_en', 'goal_fr', 'problem_en', 'problem_fr', 'impact_en', 'impact_fr', 'benefit_en', 'benefit_fr' fields. Focus on leveraging AI/ML and full-stack skills. Make it concise and actionable.`;
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = {
+                contents: chatHistory,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "title_en": { "type": "STRING" },
+                            "title_fr": { "type": "STRING" },
+                            "goal_en": { "type": "STRING" },
+                            "goal_fr": { "type": "STRING" },
+                            "problem_en": { "type": "STRING" },
+                            "problem_fr": { "type": "STRING" },
+                            "impact_en": { "type": "STRING" },
+                            "impact_fr": { "type": "STRING" },
+                            "benefit_en": { "type": "STRING" },
+                            "benefit_fr": { "type": "STRING" }
+                        },
+                        propertyOrdering: ["title_en", "title_fr", "goal_en", "goal_fr", "problem_en", "problem_fr", "impact_en", "impact_fr", "benefit_en", "benefit_fr"]
+                    }
+                }
+            };
+
+            const apiKey = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const json = result.candidates[0].content.parts[0].text;
+                    const parsedJson = JSON.parse(json);
+
+                    const generatedProject = {
+                        id: 'generated-' + Date.now(), // Unique ID for generated project
+                        category: currentCategory,
+                        title_en: parsedJson.title_en,
+                        title_fr: parsedJson.title_fr,
+                        details_en: {
+                            goal: parsedJson.goal_en,
+                            problem: parsedJson.problem_en,
+                            impact: parsedJson.impact_en,
+                            benefit: parsedJson.benefit_en
+                        },
+                        details_fr: {
+                            goal: parsedJson.goal_fr,
+                            problem: parsedJson.problem_fr,
+                            impact: parsedJson.impact_fr,
+                            benefit: parsedJson.benefit_fr
+                        }
+                    };
+                    generatedIdeaContainer.appendChild(createProjectElement(generatedProject, true));
+                } else {
+                    generatedIdeaContainer.innerHTML = `<p class="text-red-600 lang-en">Failed to generate project idea. Please try again.</p><p class="text-red-600 lang-fr">Échec de la génération de l'idée de projet. Veuillez réessayer.</p>`;
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                generatedIdeaContainer.innerHTML = `<p class="text-red-600 lang-en">Error generating project idea: ${error.message}</p><p class="text-red-600 lang-fr">Erreur lors de la génération de l'idée de projet: ${error.message}</p>`;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+        
         renderProjects();
-      });
+    });
     </script>
-  </body>
+</body>
 </html>
